@@ -184,12 +184,12 @@ Follow these patterns for generated files:
 ## Validation Checklist
 
 Before proceeding to Exercise 2, ensure you understand:
-- [ ] The purpose of each table in the business context
-- [ ] Required data types and precision for each field
-- [ ] Partitioning strategies for large tables
-- [ ] Expected anomalies and their rates
-- [ ] Relationships between tables (foreign keys)
-- [ ] File formats and naming conventions
+- [x] The purpose of each table in the business context
+- [x] Required data types and precision for each field
+- [x] Partitioning strategies for large tables
+- [x] Expected anomalies and their rates
+- [x] Relationships between tables (foreign keys)
+- [x] File formats and naming conventions
 
 ## Notes
 
