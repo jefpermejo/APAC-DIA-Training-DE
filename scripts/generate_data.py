@@ -49,6 +49,47 @@ def main():
             birth = date(1960,1,1) + timedelta(days=random.randint(0, 20000))
             join_ts = datetime(2024,1,1, tzinfo=timezone.utc) + timedelta(days=random.randint(0, 400), seconds=random.randint(0, 86399))
             f.write(f"{i},{nk},{fake.first_name()},{fake.last_name()},{email},{phone},{address_line1},,{fake.city().replace(',',' ')},{fake.state_abbr()},{fake.postcode()},AU,{lat:.6f},{lon:.6f},{birth.isoformat()},{join_ts.isoformat()}Z,{str(random.random()<0.15)},{str(random.random()>0.05)}\n")
+    
+    # Products table generation
+    TARGET_PRODUCTS = 25000
+    num_products = int(TARGET_PRODUCTS * args.scale)
+    print(f"Generating {num_products} products...")
+
+    malformed_price_count = int(num_products * 0.005)  # 0.5% invalid/missing prices
+    null_discontinued_count = int(num_products * 0.1)  # 10% discontinued products with null discontinued_dt
+
+    categories = ['Electronics', 'Clothing', 'Home', 'Toys', 'Food']
+    subcategories = {
+        'Electronics': ['Phones', 'Computers', 'Audio'],
+        'Clothing': ['Men', 'Women', 'Kids'],
+        'Home': ['Furniture', 'Kitchen', 'Decor'],
+        'Toys': ['Outdoor', 'Board', 'Educational'],
+        'Food': ['Snacks', 'Drinks', 'Pantry']
+    }
+    currencies = ['AUD', 'USD', 'EUR']
+
+    products_path = out/'products.csv'
+    with products_path.open('w', encoding='utf-8') as f:
+        f.write('product_id,sku,name,category,subcategory,current_price,currency,introduced_dt,discontinued_dt,is_discontinued\n')
+        for i in range(1, num_products + 1):
+            sku = 'SKU-' + rstr.rstr('A-Z0-9', 6)
+            category = random.choice(categories)
+            subcategory = random.choice(subcategories[category])
+            name = f"{category} {subcategory} {fake.word().capitalize()}"
+            # Price anomaly injection
+            if i <= malformed_price_count:
+                price = '' if i % 2 == 0 else '-9999.99'  # missing or invalid
+            else:
+                price = f"{round(random.uniform(5, 2000), 4):.4f}"
+            currency = random.choice(currencies)
+            introduced_dt = date(2010,1,1) + timedelta(days=random.randint(0, 5000))
+            is_discontinued = random.random() < 0.15
+            introduced_dt_dt = datetime.combine(introduced_dt, datetime.min.time(), tzinfo=timezone.utc)
+            discontinued_dt = '' if (is_discontinued and i <= null_discontinued_count) else (
+                (introduced_dt_dt + timedelta(days=random.randint(30, 2000))).isoformat() + 'Z' if is_discontinued else ''
+            )
+            f.write(f"{i},{sku},{name},{category},{subcategory},{price},{currency},{introduced_dt_dt.isoformat()}Z,{discontinued_dt},{str(is_discontinued)}\n")
+        
 '''
     # Shipments parquet sample
     tbl = pa.table({
