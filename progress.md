@@ -31,13 +31,13 @@
 - [x] Completed schema analysis and documentation review
 
 ### Exercise 2: Data Generation
-- [ ] Ongoing: Objective and requirements review
-- [ ] New: Update `/scripts/generate_data.py` to fully meet Exercise 2 requirements:
-    - Implement CLI arguments (--seed, --out, --scale)
-    - Generate all 11 datasets in correct formats
-    - Match schemas from `/schemas/schemas.py`
-    - Inject controlled anomalies as specified
-    - Ensure reproducibility and correct partitioning
+- [x] Ongoing: Objective and requirements review
+- [x] Updated `/scripts/generate_data.py`:
+    - Implemented CLI arguments (--seed, --out, --scale)
+    - Generated customers and products datasets with correct schema and controlled anomalies
+    - Ensured all datetime fields are timezone-aware and UTC across datasets
+    - Committed customer and product synthetic data separately for traceability
+    - Planning to continue with remaining datasets and partitioning
 
 ### Exercise 3: Bronze Ingestion
 - [ ] Not started
@@ -63,6 +63,13 @@
 	- Resolution: Raised concern with IT and received a temporary password via Trusted Advisor. Issue resolved.
 	- Future Action: If this happens again, submit a ticket to IT for admin access.
     - Next Step: Proceed with Exercise 2
+
+**Oct 2, 2025:**
+    - Started objective and requirement review for Exercise 2.
+    - Implemented and committed customer and product synthetic data generation logic.
+    - Updated all datetime fields to be timezone-aware (UTC) for consistency.
+    - Made separate commits for each dataset for better traceability.
+    - Next Step: Continue generating and committing remaining datasets, ensure partitioning and anomaly logic for all sources.
 
 **Notes:**
 - Update this tracker regularly to keep track on progress/blockers.
