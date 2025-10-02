@@ -14,6 +14,7 @@ def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument('--seed', type=int, default=42)
     ap.add_argument('--out', type=str, default='data_raw')
+    ap.add_argument('--scale', type=float, default=0.01)
     return ap.parse_args()
 
 def ensure_dir(p): pathlib.Path(p).mkdir(parents=True, exist_ok=True)
