@@ -124,6 +124,22 @@ def main():
             is_active = random.random() < 0.8
             close_dt = '' if is_active else (open_dt_dt + timedelta(days=random.randint(30, 3000))).isoformat() + 'Z'
             f.write(f"{i},{store_code},{name},{channel},{region},{state},{latitude},{longitude},{open_dt_dt.isoformat()}Z,{close_dt}\n")
+
+    # Suppliers table generation
+    TARGET_SUPPLIERS = 8000
+    num_suppliers = int(TARGET_SUPPLIERS * args.scale)
+    print(f"Generating {num_suppliers} suppliers...")
+
+    suppliers_path = out/'suppliers.csv'
+    with suppliers_path.open('w', encoding='utf-8') as f:
+        f.write('supplier_id,supplier_code,name,country_code,lead_time_days,preferred\n')
+        for i in range(1, num_suppliers + 1):
+            supplier_code = f"SUP-{rstr.rstr('A-Z0-9', 6)}"
+            name = fake.company()
+            country_code = fake.country_code()
+            lead_time_days = random.randint(2, 60)
+            preferred = str(random.random() < 0.2)
+            f.write(f"{i},{supplier_code},{name},{country_code},{lead_time_days},{preferred}\n")
         
 '''
     # Shipments parquet sample
