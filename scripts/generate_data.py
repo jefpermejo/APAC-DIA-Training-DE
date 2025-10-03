@@ -89,6 +89,41 @@ def main():
                 (introduced_dt_dt + timedelta(days=random.randint(30, 2000))).isoformat() + 'Z' if is_discontinued else ''
             )
             f.write(f"{i},{sku},{name},{category},{subcategory},{price},{currency},{introduced_dt_dt.isoformat()}Z,{discontinued_dt},{str(is_discontinued)}\n")
+
+    # Stores table generation
+    TARGET_STORES = 5000
+    num_stores = int(TARGET_STORES * args.scale)
+    print(f"Generating {num_stores} stores...")
+
+    impossible_latlon_count = int(num_stores * 0.01)  # 1% impossible lat/lon
+    duplicate_code_count = int(num_stores * 0.01)     # 1% duplicate store_codes
+    channels = ['web', 'pos']
+    regions = ['North', 'South', 'East', 'West', 'Central']
+    states = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']
+    fake_store_codes = [f"STORE-{rstr.rstr('A-Z0-9', 6)}" for _ in range(duplicate_code_count)]
+
+    stores_path = out/'stores.csv'
+    with stores_path.open('w', encoding='utf-8') as f:
+        f.write('store_id,store_code,name,channel,region,state,latitude,longitude,open_dt,close_dt\n')
+        for i in range(1, num_stores + 1):
+            # Duplicate store_code anomaly
+            store_code = fake_store_codes[i % duplicate_code_count] if i <= duplicate_code_count else f"STORE-{rstr.rstr('A-Z0-9', 6)}"
+            name = f"{fake.city()} {random.choice(['Mall', 'Outlet', 'Shop', 'Market'])}"
+            channel = random.choice(channels)
+            region = random.choice(regions)
+            state = random.choice(states)
+            # Impossible lat/lon anomaly
+            if i <= impossible_latlon_count:
+                latitude = random.choice([999, -999, 91, -91])
+                longitude = random.choice([999, -999, 181, -181])
+            else:
+                latitude = -44 + random.random()*10
+                longitude = 112 + random.random()*40
+            open_dt = date(2010,1,1) + timedelta(days=random.randint(0, 5000))
+            open_dt_dt = datetime.combine(open_dt, datetime.min.time(), tzinfo=timezone.utc)
+            is_active = random.random() < 0.8
+            close_dt = '' if is_active else (open_dt_dt + timedelta(days=random.randint(30, 3000))).isoformat() + 'Z'
+            f.write(f"{i},{store_code},{name},{channel},{region},{state},{latitude},{longitude},{open_dt_dt.isoformat()}Z,{close_dt}\n")
         
 '''
     # Shipments parquet sample
