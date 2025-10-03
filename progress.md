@@ -1,4 +1,3 @@
-
 # Personal Progress Tracker
 
 ## Deliverables
@@ -31,13 +30,25 @@
 - [x] Completed schema analysis and documentation review
 
 ### Exercise 2: Data Generation
-- [x] Ongoing: Objective and requirements review
-- [x] Updated `/scripts/generate_data.py`:
-    - Implemented CLI arguments (--seed, --out, --scale)
-    - Generated customers and products datasets with correct schema and controlled anomalies
-    - Ensured all datetime fields are timezone-aware and UTC across datasets
-    - Committed customer and product synthetic data separately for traceability
-    - Planning to continue with remaining datasets and partitioning
+
+#### Checklist
+- [x] Review objective and requirements
+- [x] Implement CLI arguments (`--seed`, `--out`, `--scale`) in `/scripts/generate_data.py`
+- [x] Generate customers dataset (schema, anomalies, UTC datetimes)
+- [x] Generate products dataset (schema, anomalies, UTC datetimes)
+- [x] Commit customer and product synthetic data separately for traceability
+- [x] Generate suppliers dataset (schema, anomalies, UTC datetimes)
+- [x] Generate stores dataset (schema, anomalies, UTC datetimes)
+- [x] Generate orders header fact table
+- [x] Generate order lines fact table
+- [x] Commit changes for each table in `/scripts/generate_data.py`
+- [x] Validate outputs and partitioning logic
+
+#### Next Steps
+- [ ] Generate events data
+- [ ] Validate all synthetic datasets for schema compliance and anomaly logic
+- [ ] Organize sample outputs in `data_raw/samples/` and commit
+- [ ] Finalize documentation and update progress tracker
 
 ### Exercise 3: Bronze Ingestion
 - [ ] Not started
@@ -64,14 +75,20 @@
 	- Future Action: If this happens again, submit a ticket to IT for admin access.
     - Next Step: Proceed with Exercise 2
 
-**Oct 2, 2025:**
+- **Oct 2, 2025:**
     - Started objective and requirement review for Exercise 2.
     - Implemented and committed customer and product synthetic data generation logic.
     - Updated all datetime fields to be timezone-aware (UTC) for consistency.
     - Made separate commits for each dataset for better traceability.
     - Next Step: Continue generating and committing remaining datasets, ensure partitioning and anomaly logic for all sources.
 
+- **Oct 3, 2025:**
+    - Completed synthetic data generation for dimension tables: stores and suppliers (customers and products were completed yesterday).
+    - Completed fact tables: orders header and order lines.
+    - Committed changes for each table in generate_data.py.
+    - Next: Begin generating events data.
+
+
 **Notes:**
 - Update this tracker regularly to keep track on progress/blockers.
 - Add details or blockers as needed.
-
