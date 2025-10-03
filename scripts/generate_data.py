@@ -140,6 +140,66 @@ def main():
             lead_time_days = random.randint(2, 60)
             preferred = str(random.random() < 0.2)
             f.write(f"{i},{supplier_code},{name},{country_code},{lead_time_days},{preferred}\n")
+
+    # Orders Header fact table generation (partitioned)
+    TARGET_ORDERS = 1000000
+    num_orders = int(TARGET_ORDERS * args.scale)
+    print(f"Generating {num_orders} orders header...")
+
+    valid_customer_ids = list(range(1, int(80000 * args.scale) + 1))
+    valid_store_ids = list(range(1, int(5000 * args.scale) + 1))
+
+    start_date = date(2024, 1, 1)
+    num_days = 90  # Spread orders over 90 days
+    orders_per_day = num_orders // num_days
+    remainder = num_orders % num_days
+
+    channels = ['web', 'pos']
+    payment_methods = ['card', 'cash', 'paypal', 'giftcard']
+    currencies = ['AUD', 'USD', 'EUR']
+
+    duplicate_count = int(num_orders * 0.0005)
+    duplicate_order_ids = random.sample(range(1, num_orders+1), duplicate_count)
+
+    invalid_fk_count = int(num_orders * 0.01)
+    invalid_customer_ids = [-(i+1) for i in range(invalid_fk_count//2)]
+    invalid_store_ids = [-(i+1) for i in range(invalid_fk_count//2)]
+
+    order_id = 1
+    for day in range(num_days):
+        order_dt = start_date + timedelta(days=day)
+        part_dir = out / f"orders/order_dt={order_dt.isoformat()}"
+        ensure_dir(part_dir)
+        part_path = part_dir / "part-1.csv"
+        with part_path.open('w', encoding='utf-8') as f:
+            f.write('order_id,order_ts,order_dt_local,customer_id,store_id,channel,payment_method,coupon_code,shipping_fee,currency\n')
+            n_orders = orders_per_day + (1 if day < remainder else 0)
+            for i in range(n_orders):
+                # Duplicate order_id anomaly
+                if order_id in duplicate_order_ids:
+                    use_order_id = random.choice(duplicate_order_ids)
+                else:
+                    use_order_id = order_id
+
+                # Foreign key anomaly
+                if order_id <= invalid_fk_count:
+                    customer_id = random.choice(invalid_customer_ids)
+                    store_id = random.choice(invalid_store_ids)
+                else:
+                    customer_id = random.choice(valid_customer_ids)
+                    store_id = random.choice(valid_store_ids)
+
+                order_ts = datetime.combine(order_dt, datetime.min.time(), tzinfo=timezone.utc) + timedelta(seconds=random.randint(0, 86399))
+                order_dt_local = order_dt.isoformat()
+                channel = random.choice(channels)
+                payment_method = random.choice(payment_methods)
+                coupon_code = '' if random.random() > 0.2 else f"COUPON-{rstr.rstr('A-Z0-9', 6)}"
+                shipping_fee = f"{round(np.random.normal(10, 5), 2):.2f}"
+                currency = random.choice(currencies)
+                f.write(f"{use_order_id},{order_ts.isoformat()}Z,{order_dt_local},{customer_id},{store_id},{channel},{payment_method},{coupon_code},{shipping_fee},{currency}\n")
+                order_id += 1
+
+    print(f"✅ Orders header written to partitioned directories in {out}/orders/")
         
 '''
     # Shipments parquet sample
