@@ -200,6 +200,58 @@ def main():
                 order_id += 1
 
     print(f"✅ Orders header written to partitioned directories in {out}/orders/")
+
+    # Orders Lines fact table generation (partitioned)
+    TARGET_ORDER_LINES = 4000000
+    num_order_lines = int(TARGET_ORDER_LINES * args.scale)
+    print(f"Generating {num_order_lines} order lines...")
+
+    valid_product_ids = list(range(1, int(25000 * args.scale) + 1))
+    invalid_product_count = int(num_order_lines * 0.01)
+    invalid_product_ids = [-(i+1) for i in range(invalid_product_count)]
+
+    # For partitioning, reuse order header partitioning
+    order_line_id = 1
+    line_number = 1
+    order_lines_per_order = max(1, num_order_lines // num_orders)
+    remainder_lines = num_order_lines % num_orders
+
+    # For each order partition
+    order_id = 1
+    for day in range(num_days):
+        order_dt = start_date + timedelta(days=day)
+        part_dir = out / f"orders/order_dt={order_dt.isoformat()}"
+        ensure_dir(part_dir)
+        part_path = part_dir / "order_lines.csv"
+        with part_path.open('w', encoding='utf-8') as f:
+            f.write('order_id,line_number,product_id,qty,unit_price,line_discount_pct,tax_pct\n')
+            n_orders = orders_per_day + (1 if day < remainder else 0)
+            for i in range(n_orders):
+                # For each order, generate lines
+                n_lines = order_lines_per_order + (1 if order_id <= remainder_lines else 0)
+                for ln in range(1, n_lines + 1):
+                    # 1% invalid product_id
+                    if order_line_id <= invalid_product_count:
+                        product_id = random.choice(invalid_product_ids)
+                    else:
+                        product_id = random.choice(valid_product_ids)
+
+                    # Rare negative qty or zero price
+                    if random.random() < 0.002:
+                        qty = -random.randint(1, 5)
+                    else:
+                        qty = random.randint(1, 10)
+                    if random.random() < 0.002:
+                        unit_price = 0.0
+                    else:
+                        unit_price = round(np.random.uniform(5, 2000), 4)
+
+                    line_discount_pct = round(np.random.uniform(0, 0.5), 4)
+                    tax_pct = round(np.random.uniform(0.05, 0.15), 4)
+                    f.write(f"{order_id},{ln},{product_id},{qty},{unit_price:.4f},{line_discount_pct:.4f},{tax_pct:.4f}\n")
+                    order_line_id += 1
+                order_id += 1
+    print(f"✅ Order lines written to partitioned directories in {out}/orders/ (order_lines.csv)")
         
 '''
     # Shipments parquet sample
