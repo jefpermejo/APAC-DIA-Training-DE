@@ -301,6 +301,52 @@ def main():
                 event_id += 1
     print(f"✅ Events written to partitioned directories in {out}/events/")
 
+    # Sensors table generation (CSV, partitioned by store_id and month)
+    TARGET_SENSORS = 10000000
+    num_sensors = int(TARGET_SENSORS * args.scale)
+    print(f"Generating {num_sensors} sensors...")
+
+    # For partitioning
+    valid_store_ids = list(range(1, int(5000 * args.scale) + 1))
+    months = [datetime(2024, 1, 1) + timedelta(days=30 * m) for m in range(6)]  # 6 months
+    shelf_ids = [f"SHELF-{rstr.rstr('A-Z0-9', 4)}" for _ in range(100)]
+
+    out_of_range_count = int(num_sensors * 0.005)
+    missing_ts_count = int(num_sensors * 0.001)
+
+    sensor_id = 1
+    sensors_per_store = num_sensors // len(valid_store_ids)
+    remainder = num_sensors % len(valid_store_ids)
+
+    for store_id in valid_store_ids:
+        for month_dt in months:
+                month_str = month_dt.strftime('%Y-%m')
+                part_dir = out / f"sensors/store_id={store_id}/month={month_str}"
+                ensure_dir(part_dir)
+                part_path = part_dir / "sensors.csv"
+                with part_path.open('w', encoding='utf-8') as f:
+                    f.write('sensor_ts,store_id,shelf_id,temperature_c,humidity_pct,battery_mv\n')
+                    n_sensors = sensors_per_store + (1 if sensor_id <= remainder else 0)
+                    for i in range(n_sensors):
+                        # Out-of-range anomaly
+                        if sensor_id <= out_of_range_count:
+                            temperature_c = round(random.uniform(-30, 80), 2)  # extreme values
+                            humidity_pct = round(random.uniform(-10, 120), 2)
+                        else:
+                            temperature_c = round(random.uniform(2, 35), 2)
+                            humidity_pct = round(random.uniform(20, 80), 2)
+                        # Missing sensor_ts anomaly
+                        if sensor_id <= missing_ts_count:
+                            sensor_ts = ''
+                        else:
+                            ts = datetime.combine(month_dt.date(), datetime.min.time(), tzinfo=timezone.utc) + timedelta(days=random.randint(0,29), seconds=random.randint(0,86399))
+                            sensor_ts = ts.isoformat() + 'Z'
+                        shelf_id = random.choice(shelf_ids)
+                        battery_mv = random.randint(2800, 4200)
+                        f.write(f"{sensor_ts},{store_id},{shelf_id},{temperature_c},{humidity_pct},{battery_mv}\n")
+                        sensor_id += 1
+    print(f"✅ Sensors written to partitioned directories in {out}/sensors/")
+
 '''
     # Shipments parquet sample
     tbl = pa.table({
