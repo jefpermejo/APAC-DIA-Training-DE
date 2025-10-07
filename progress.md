@@ -2,11 +2,11 @@
 
 ## Deliverables
 - [x] `/scripts/generate_data.py`: Data generation implementation ✅ Complete
-- [x] `/scripts/bronze_dlt_pipeline_test_updated.py`: Bronze ingestion ✅ Complete  
+- [ ] `/scripts/load_to_bronze.py` or `/scripts/bronze_dlt_pipeline.py`
 - [ ] `/dbt/`: Complete dbt project with models, tests, snapshots
-- [x] `data_raw/samples/`: Sample data for review ✅ Complete
-- [x] `lake/bronze/parquet/samples/`: Sample Bronze outputs ✅ Complete
-- [x] `duckdb/warehouse.duckdb`: DuckDB database ✅ Complete
+- [ ] `data_raw/samples/`: Sample data for review
+- [ ] `lake/bronze/parquet/samples/`: Sample Bronze outputs
+- [ ] `duckdb/warehouse.duckdb`: DuckDB database (if < 50MB)
 - [ ] `analytics/report.pbix`: Power BI dashboard
 - [ ] `docs/post_mortem.md`: Reflection document
 
