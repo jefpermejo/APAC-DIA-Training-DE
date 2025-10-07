@@ -347,6 +347,39 @@ def main():
                         sensor_id += 1
     print(f"✅ Sensors written to partitioned directories in {out}/sensors/")
 
+    # Exchange Rates table generation (XLSX)
+    TARGET_EXR_DAYS = 365 * 3  # 3 years
+    currencies = ['AUD', 'USD', 'EUR', 'JPY', 'GBP', 'CNY']
+    start_exr_date = date(2022, 1, 1)
+    print(f"Generating exchange rates for {TARGET_EXR_DAYS} days...")
+
+    exr_path = out / 'exchange_rates.xlsx'
+    workbook = xlsxwriter.Workbook(str(exr_path))
+    worksheet = workbook.add_worksheet('rates')
+    worksheet.write(0, 0, 'date')
+    worksheet.write(0, 1, 'currency')
+    worksheet.write(0, 2, 'rate_to_aud')
+
+    row = 1
+    last_rates = {c: round(random.uniform(0.5, 2.0), 8) for c in currencies}
+    for day in range(TARGET_EXR_DAYS):
+        d = start_exr_date + timedelta(days=day)
+        is_weekend = d.weekday() >= 5
+        for c in currencies:
+            # For weekends, use previous day's rate
+                    if is_weekend:
+                        rate = last_rates[c]
+                    else:
+                        # Simulate small daily FX movement
+                        rate = round(last_rates[c] * random.uniform(0.995, 1.005), 8)
+                        last_rates[c] = rate
+                    worksheet.write(row, 0, d.isoformat())
+                    worksheet.write(row, 1, c)
+                    worksheet.write(row, 2, rate)
+                    row += 1
+    workbook.close()
+    print(f"✅ Exchange rates written to {exr_path}")
+
 '''
     # Shipments parquet sample
     tbl = pa.table({
