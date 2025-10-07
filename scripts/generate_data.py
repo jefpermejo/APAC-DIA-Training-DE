@@ -9,6 +9,7 @@ import rstr
 import pyarrow as pa
 import pyarrow.parquet as pq
 import xlsxwriter
+import decimal
 
 def parse_args():
     ap = argparse.ArgumentParser()
@@ -380,19 +381,45 @@ def main():
     workbook.close()
     print(f"✅ Exchange rates written to {exr_path}")
 
-'''
-    # Shipments parquet sample
+    # Shipments table generation (Parquet)
+    TARGET_SHIPMENTS = 1000000
+    num_shipments = int(TARGET_SHIPMENTS * args.scale)
+    print(f"Generating {num_shipments} shipments...")
+
+    carriers = ['AUSPOST', 'DHL', 'FEDEX', 'TNT', 'UPS']
+    start_ship_date = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    sla_days = 3
+    null_delivered_count = int(num_shipments * 0.01)
+    late_delivery_count = int(num_shipments * 0.01)
+
+    shipment_ids = np.arange(1, num_shipments + 1)
+    order_ids = np.arange(1, num_shipments + 1)
+    carriers_arr = np.random.choice(carriers, num_shipments)
+    shipped_ats = [start_ship_date + timedelta(days=int(i % 90), seconds=random.randint(0, 86399)) for i in range(num_shipments)]
+    delivered_ats = []
+    ship_costs = []
+    for i in range(num_shipments):
+            # Null delivered_at anomaly
+            if i < null_delivered_count:
+                delivered_ats.append(None)
+            # Late delivery anomaly
+            elif i < null_delivered_count + late_delivery_count:
+                delivered_ats.append(shipped_ats[i] + timedelta(days=sla_days + random.randint(1, 5)))
+            else:
+                delivered_ats.append(shipped_ats[i] + timedelta(days=sla_days))
+            # Ship cost as decimal
+            ship_costs.append(pa.scalar(decimal.Decimal(str(round(np.random.uniform(10, 500), 2))), pa.decimal128(12,2)))
+
     tbl = pa.table({
-        'shipment_id': pa.array(range(1, 10001), type=pa.int64()),
-        'order_id': pa.array(range(1, 10001), type=pa.int64()),
-        'carrier': pa.array(['AUSPOST']*10000, type=pa.string()),
-        'shipped_at': pa.array([datetime(2024,1,1)+timedelta(days=i%90) for i in range(10000)], type=pa.timestamp('us')),
-        'delivered_at': pa.array([datetime(2024,1,2)+timedelta(days=i%90) for i in range(10000)], type=pa.timestamp('us')),
-        'ship_cost': pa.array([1995]*10000, type=pa.int64()).cast(pa.decimal128(12,2)),
+        'shipment_id': pa.array(shipment_ids, type=pa.int64()),
+        'order_id': pa.array(order_ids, type=pa.int64()),
+        'carrier': pa.array(carriers_arr, type=pa.string()),
+        'shipped_at': pa.array(shipped_ats, type=pa.timestamp('us')),
+        'delivered_at': pa.array(delivered_ats, type=pa.timestamp('us')),
+        'ship_cost': pa.array(ship_costs, type=pa.decimal128(12,2)),
     })
     pq.write_table(tbl, out/'shipments.parquet', compression='snappy')
+    print(f"✅ Shipments written to {out}/shipments.parquet")
 
-    print(f"✅ Sample raw written to {out}. Expand to required volumes per /docs.")
-'''
 if __name__ == '__main__':
     main()
