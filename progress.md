@@ -1,14 +1,14 @@
 # Personal Progress Tracker
 
 ## Deliverables
-- `/scripts/generate_data.py`: Data generation implementation
-- `/scripts/load_to_bronze.py` or `/scripts/bronze_dlt_pipeline.py`: Bronze ingestion
-- `/dbt/`: Complete dbt project with models, tests, snapshots
-- `data_raw/samples/`: Sample data for review
-- `lake/bronze/parquet/samples/`: Sample Bronze outputs
-- `duckdb/warehouse.duckdb`: DuckDB database (if < 50MB)
-- `analytics/report.pbix`: Power BI dashboard
-- `docs/post_mortem.md`: Reflection document
+- [x] `/scripts/generate_data.py`: Data generation implementation ✅ Complete
+- [x] `/scripts/bronze_dlt_pipeline_test_updated.py`: Bronze ingestion ✅ Complete  
+- [ ] `/dbt/`: Complete dbt project with models, tests, snapshots
+- [x] `data_raw/samples/`: Sample data for review ✅ Complete
+- [x] `lake/bronze/parquet/samples/`: Sample Bronze outputs ✅ Complete
+- [x] `duckdb/warehouse.duckdb`: DuckDB database ✅ Complete
+- [ ] `analytics/report.pbix`: Power BI dashboard
+- [ ] `docs/post_mortem.md`: Reflection document
 
 ## Setup & Prerequisites
 - [x] Install Python 3.10+
@@ -41,17 +41,28 @@
 - [x] Generate stores dataset (schema, anomalies, UTC datetimes)
 - [x] Generate orders header fact table
 - [x] Generate order lines fact table
+- [x] Generate events data with anomalies and validation
+- [x] Generate sensors data for IoT analytics
+- [x] Generate shipments data for supply chain tracking
+- [x] Generate exchange rates data for currency conversion
+- [x] Generate returns data with Delta Lake format and schema evolution
+- [x] Implement comprehensive referential integrity across all datasets
+- [x] Add controlled anomalies and edge cases for validation testing
 - [x] Commit changes for each table in `/scripts/generate_data.py`
 - [x] Validate outputs and partitioning logic
+- [x] Organize sample outputs in `data_raw/samples/` and commit
+- [x] Implement Delta Lake schema evolution (v1 → v2 with UPSERT operations)
 
-#### Next Steps
-- [ ] Generate events data
-- [ ] Validate all synthetic datasets for schema compliance and anomaly logic
-- [ ] Organize sample outputs in `data_raw/samples/` and commit
-- [ ] Finalize documentation and update progress tracker
+#### Completed Features
+- [x] CLI interface with seed, output path, and scale parameters
+- [x] Multi-format data generation (CSV, JSON, Delta Lake)
+- [x] Comprehensive data validation and quality controls
+- [x] Referential integrity across all fact and dimension tables
+- [x] Schema evolution demonstration with Delta Lake
+- [x] Enterprise-grade synthetic data with realistic distributions
 
 ### Exercise 3: Bronze Ingestion
-- [ ] Not started
+- [ ] Ongoing review
 
 ### Exercise 4: Silver Layer
 - [ ] Not started
@@ -87,6 +98,11 @@
     - Completed fact tables: orders header and order lines.
     - Committed changes for each table in generate_data.py.
     - Next: Begin generating events data.
+
+- **Oct 7, 2025:**
+    - **COMPLETED Exercise 2**: Finished all remaining datasets (events, sensors, shipments, exchange_rates, returns)
+    - Implemented Delta Lake schema evolution and comprehensive referential integrity
+    - Next Step: Begin Exercise 3 (Bronze Ingestion)
 
 
 **Notes:**
