@@ -252,7 +252,55 @@ def main():
                     order_line_id += 1
                 order_id += 1
     print(f"✅ Order lines written to partitioned directories in {out}/orders/ (order_lines.csv)")
-        
+
+    # Events table generation (JSONL, partitioned)
+    TARGET_EVENTS = 2000000
+    num_events = int(TARGET_EVENTS * args.scale)
+    print(f"Generating {num_events} events...")
+
+    event_types = ['page_view', 'add_to_cart', 'purchase', 'login', 'logout', 'search']
+    malformed_count = int(num_events * 0.0005)
+    missing_envelope_count = int(num_events * 0.0005)
+
+    start_event_date = date(2024, 1, 1)
+    num_event_days = 60
+    events_per_day = num_events // num_event_days
+    remainder_events = num_events % num_event_days
+
+    event_id = 1
+    for day in range(num_event_days):
+        event_dt = start_event_date + timedelta(days=day)
+        part_dir = out / f"events/event_dt={event_dt.isoformat()}"
+        ensure_dir(part_dir)
+        part_path = part_dir / f"events_{day+1}.jsonl"
+        with part_path.open('w', encoding='utf-8') as f:
+            n_events = events_per_day + (1 if day < remainder_events else 0)
+            for i in range(n_events):
+                # Malformed JSON anomaly
+                if event_id <= malformed_count:
+                    f.write('{"event_id": ' + str(event_id) + ', "event_ts": "MALFORMED"\n')
+                # Missing envelope anomaly
+                elif event_id <= malformed_count + missing_envelope_count:
+                    payload = {"action": random.choice(event_types), "meta": {"info": fake.word()}}
+                    f.write(f'{payload}\n')
+                else:
+                    envelope = {
+                        "event_id": event_id,
+                        "event_ts": (datetime.combine(event_dt, datetime.min.time(), tzinfo=timezone.utc) + timedelta(seconds=random.randint(0, 86399))).isoformat() + 'Z',
+                        "event_type": random.choice(event_types),
+                        "user_id": random.randint(1, 100000),
+                        "session_id": f"SESS-{rstr.rstr('A-Z0-9', 10)}"
+                    }
+                    payload = {
+                        "action": envelope["event_type"],
+                        "meta": {"info": fake.word(), "amount": round(random.uniform(1, 500), 2)}
+                    }
+                    event_obj = {"envelope": envelope, "payload": payload}
+                    import json
+                    f.write(json.dumps(event_obj) + '\n')
+                event_id += 1
+    print(f"✅ Events written to partitioned directories in {out}/events/")
+
 '''
     # Shipments parquet sample
     tbl = pa.table({
