@@ -1,6 +1,6 @@
 # Generate synthetic raw data locally with controlled edge cases.
 # Usage: python scripts/generate_data.py --seed 42 --out data_raw
-import argparse, os, pathlib, random
+import argparse, os, pathlib, random, json
 from datetime import datetime, timedelta, date, timezone
 import numpy as np
 from faker import Faker
@@ -10,6 +10,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import xlsxwriter
 import decimal
+from deltalake import write_deltalake, DeltaTable
 
 def parse_args():
     ap = argparse.ArgumentParser()
@@ -297,7 +298,6 @@ def main():
                         "meta": {"info": fake.word(), "amount": round(random.uniform(1, 500), 2)}
                     }
                     event_obj = {"envelope": envelope, "payload": payload}
-                    import json
                     f.write(json.dumps(event_obj) + '\n')
                 event_id += 1
     print(f"✅ Events written to partitioned directories in {out}/events/")
@@ -420,6 +420,107 @@ def main():
     })
     pq.write_table(tbl, out/'shipments.parquet', compression='snappy')
     print(f"✅ Shipments written to {out}/shipments.parquet")
+
+    # Returns table generation (Delta format with schema evolution)
+    TARGET_RETURNS = 100000
+    num_returns = int(TARGET_RETURNS * args.scale)
+    print(f"Generating {num_returns} returns...")
+
+    # Generate realistic return data
+    return_ids = np.arange(1, num_returns + 1)
+    order_ids = np.random.randint(1, int(1000000 * args.scale) + 1, num_returns)
+    product_ids = np.random.randint(1, int(25000 * args.scale) + 1, num_returns)
+    return_ts = [datetime(2024, 1, 1, tzinfo=timezone.utc) + timedelta(days=random.randint(1, 90), seconds=random.randint(0, 86399)) for _ in range(num_returns)]
+    qtys = np.random.randint(1, 5, num_returns)
+    reasons = np.random.choice(['damaged', 'wrong_item', 'not_needed', 'expired', 'other'], num_returns)
+
+    # Create returns directory
+    returns_dir = out / 'returns'
+    returns_dir.mkdir(exist_ok=True)
+    delta_path = str(returns_dir / 'returns_delta')
+
+    # Phase 1: Initial schema (v1) - first 70% of data
+    split_idx = int(num_returns * 0.7)
+    v1_return_ids = return_ids[:split_idx]
+    v1_order_ids = order_ids[:split_idx]
+    v1_product_ids = product_ids[:split_idx]
+    v1_return_ts = return_ts[:split_idx]
+    v1_qtys = qtys[:split_idx]
+    v1_reasons = reasons[:split_idx]
+
+    returns_v1_table = pa.table({
+        'return_id': pa.array(v1_return_ids, type=pa.int64()),
+        'order_id': pa.array(v1_order_ids, type=pa.int64()),
+        'product_id': pa.array(v1_product_ids, type=pa.int64()),
+        'return_ts': pa.array(v1_return_ts, type=pa.timestamp('us')),
+        'qty': pa.array(v1_qtys, type=pa.int32()),
+        'reason': pa.array(v1_reasons, type=pa.string()),
+    })
+
+    # Write v1 (base schema)
+    write_deltalake(delta_path, returns_v1_table, mode="overwrite")
+    print(f"✅ Returns Delta v1 written to {delta_path} (schema evolution demo)")
+
+    # Phase 2: Schema evolution (v2) - remaining 30% with new column
+    v2_return_ids = return_ids[split_idx:]
+    v2_order_ids = order_ids[split_idx:]
+    v2_product_ids = product_ids[split_idx:]
+    v2_return_ts = return_ts[split_idx:]
+    v2_qtys = qtys[split_idx:]
+    v2_reasons = reasons[split_idx:]
+    v2_reason_codes = np.random.choice(['A', 'B', 'C', 'D', 'E'], len(v2_return_ids))
+
+    returns_v2_table = pa.table({
+        'return_id': pa.array(v2_return_ids, type=pa.int64()),
+        'order_id': pa.array(v2_order_ids, type=pa.int64()),
+        'product_id': pa.array(v2_product_ids, type=pa.int64()),
+        'return_ts': pa.array(v2_return_ts, type=pa.timestamp('us')),
+        'qty': pa.array(v2_qtys, type=pa.int32()),
+        'reason': pa.array(v2_reasons, type=pa.string()),
+        'return_reason_code': pa.array(v2_reason_codes, type=pa.string()),
+    })
+
+    # Append v2 with schema evolution
+    write_deltalake(delta_path, returns_v2_table, mode="append", schema_mode="merge")
+    print(f"✅ Returns Delta v2 appended with schema evolution (added return_reason_code)")
+
+    # Phase 3: Demonstrate UPSERT operation
+    upsert_count = max(1, int(len(v1_return_ids) * 0.01))  # 1% of v1 records
+    upsert_indices = np.random.choice(len(v1_return_ids), upsert_count, replace=False)
+    upsert_return_ids = v1_return_ids[upsert_indices]
+    upsert_order_ids = v1_order_ids[upsert_indices]
+    upsert_product_ids = v1_product_ids[upsert_indices]
+    upsert_return_ts = [v1_return_ts[i] for i in upsert_indices]
+    upsert_qtys = v1_qtys[upsert_indices]
+    upsert_reasons = np.random.choice(['restocked', 'customer_error'], upsert_count)
+    upsert_reason_codes = np.random.choice(['F', 'G'], upsert_count)
+
+    upsert_table = pa.table({
+        'return_id': pa.array(upsert_return_ids, type=pa.int64()),
+        'order_id': pa.array(upsert_order_ids, type=pa.int64()),
+        'product_id': pa.array(upsert_product_ids, type=pa.int64()),
+        'return_ts': pa.array(upsert_return_ts, type=pa.timestamp('us')),
+        'qty': pa.array(upsert_qtys, type=pa.int32()),
+        'reason': pa.array(upsert_reasons, type=pa.string()),
+        'return_reason_code': pa.array(upsert_reason_codes, type=pa.string()),
+    })
+
+    # UPSERT: overwrite existing records with same return_id
+    write_deltalake(delta_path, upsert_table, mode="append")
+    print(f"✅ Returns Delta UPSERT completed ({upsert_count} records updated)")
+
+    # Also create compatibility Parquet files
+    pq.write_table(returns_v1_table, returns_dir/'returns_v1.parquet', compression='snappy')
+    pq.write_table(returns_v2_table, returns_dir/'returns_v2.parquet', compression='snappy')
+    print(f"✅ Returns Parquet compatibility files written to {returns_dir}/")
+
+    # Show Delta table info
+    try:
+        dt = DeltaTable(delta_path)
+        print(f"Delta table version: {dt.version()}")
+        print(f"Delta table files: {len(dt.file_uris())}")
+    except Exception as e:
+        print(f"Could not read Delta table info: {e}")
 
 if __name__ == '__main__':
     main()
