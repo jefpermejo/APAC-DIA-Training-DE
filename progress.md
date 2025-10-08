@@ -62,7 +62,8 @@
 - [x] Enterprise-grade synthetic data with realistic distributions
 
 ### Exercise 3: Bronze Ingestion
-- [ ] Ongoing review
+- [x] Done review
+- [ ] Ongoing bronze layer ingestion
 
 ### Exercise 4: Silver Layer
 - [ ] Not started
@@ -103,6 +104,16 @@
     - **COMPLETED Exercise 2**: Finished all remaining datasets (events, sensors, shipments, exchange_rates, returns)
     - Implemented Delta Lake schema evolution and comprehensive referential integrity
     - Next Step: Begin Exercise 3 (Bronze Ingestion)
+
+- **Oct 8, 2025:**
+    - **Exercise 3 Progress**: Bronze layer ingestion implementation
+    - Implemented bronze layer with traditional Python script approach:
+      - Dual output: DuckDB bronze schema + Parquet files
+      - Audit trail: ingestion_ts (src_filename, src_row_hash - ongoing)
+      - Manifest tracking for idempotent processing
+    - Successfully ingested customers (800 rows) and products (250 rows) with full schema validation
+    - Commits: Bronze layer implementation with audit columns
+    - Next Step: Continue expanding the bronze layer to ingest the remaining data
 
 
 **Notes:**
