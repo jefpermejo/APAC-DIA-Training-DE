@@ -135,8 +135,25 @@ def load_customers(raw_root, lake_root, conn):
         mark_processed(conn, src, len(validated_table), 0, 'success')
         
     except Exception as e:
-        #Ongoing: Handle validation errors - write to rejects with reason
-        print(f"Customers: Schema validation FAILED - {e}")
+        # Handle validation errors - write to rejects with reason
+        print(f"Products: Schema validation FAILED - {e}")
+        
+        # Create rejects directory
+        rejects_path = lake_root / '_rejects'
+        rejects_path.mkdir(parents=True, exist_ok=True)
+        
+        # Add rejection reason and timestamp
+        rejection_reason = f"Schema validation failed: {str(e)}"
+        reject_table = table.append_column('rejection_reason', pa.array([rejection_reason] * len(table)))
+        reject_table = reject_table.append_column('rejected_at', pa.array([dt.datetime.utcnow()] * len(table)))
+        
+        # Write rejected data
+        reject_file = rejects_path / f"customers_schema_reject_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.parquet"
+        pq.write_table(reject_table, str(reject_file))
+        print(f"Rejected data written to: {reject_file}")
+        
+        # Mark as processed with all rows rejected
+        mark_processed(conn, src, 0, len(table), 'all_rejected')
 
 def load_products(raw_root, lake_root, conn):
     src = raw_root/'products.csv'
@@ -179,8 +196,25 @@ def load_products(raw_root, lake_root, conn):
         mark_processed(conn, src, len(validated_table), 0, 'success')
         
     except Exception as e:
-        #Ongoing: Handle validation errors - write to rejects with reason
-        print(f"Customers: Schema validation FAILED - {e}")
+        # Handle validation errors - write to rejects with reason
+        print(f"Products: Schema validation FAILED - {e}")
+        
+        # Create rejects directory
+        rejects_path = lake_root / '_rejects'
+        rejects_path.mkdir(parents=True, exist_ok=True)
+        
+        # Add rejection reason and timestamp
+        rejection_reason = f"Schema validation failed: {str(e)}"
+        reject_table = table.append_column('rejection_reason', pa.array([rejection_reason] * len(table)))
+        reject_table = reject_table.append_column('rejected_at', pa.array([dt.datetime.utcnow()] * len(table)))
+        
+        # Write rejected data
+        reject_file = rejects_path / f"products_schema_reject_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.parquet"
+        pq.write_table(reject_table, str(reject_file))
+        print(f"Rejected data written to: {reject_file}")
+        
+        # Mark as processed with all rows rejected
+        mark_processed(conn, src, 0, len(table), 'all_rejected')
 
 def main():
     args = parse_args()
