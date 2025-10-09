@@ -99,50 +99,88 @@ def load_customers(raw_root, lake_root, conn):
     if not src.exists(): return
     if already_processed(conn, src): return
     
-    # Read CSV and let PyArrow infer types
-    tbl = pacsv.read_csv(src, read_options=pacsv.ReadOptions(encoding='utf-8'))
+    # Read CSV
+    table = pacsv.read_csv(src, read_options=pacsv.ReadOptions(encoding='utf-8'))
     
-    print(f"Customers - Original rows: {len(tbl)}")
-    print(f"Inferred schema: {tbl.schema}")
+    print(f"Customers - Original rows: {len(table)}")
+    print(f"Inferred schema: {table.schema}")
     
-    # Add audit column
-    now = pa.scalar(dt.datetime.utcnow(), type=pa.timestamp('us'))
-    tbl = tbl.append_column('ingestion_ts', pa.array([now.as_py()]*len(tbl), type=pa.timestamp('us')))
-    
-    # Write to bronze layer destinations
-    pq_base = lake_root/'bronze'/'parquet'/'customers'
-    write_parquet_partitioned(tbl, pq_base, partitioning=None, table_name='customers')
-    
-    # Also write to DuckDB
-    write_to_duckdb(tbl, conn, 'customers')
-    
-    print(f"Loaded {len(tbl)} rows to bronze layer (Parquet + DuckDB)")
-    mark_processed(conn, src, len(tbl), 0, 'success')
+    # Schema validation with reject handling
+    try:
+        # Cast to the expected schema
+        validated_table = table.cast(customers_schema, safe=False)
+        print("Customers: Schema validation PASSED")
+        
+        # Add audit columns to validated data
+        now = pa.scalar(dt.datetime.utcnow(), type=pa.timestamp('us'))
+        src_filename = src.name  # Extract filename from path
+
+        # Generate src_row_hash
+        row_numbers = list(range(len(validated_table)))
+        row_hashes = [f"{src_filename}_{i}" for i in row_numbers]
+        
+        # Add all audit columns
+        validated_table = validated_table.append_column('ingestion_ts', pa.array([now.as_py()]*len(validated_table), type=pa.timestamp('us')))
+        validated_table = validated_table.append_column('src_filename', pa.array([src_filename]*len(validated_table), type=pa.string()))
+        validated_table = validated_table.append_column('src_row_hash', pa.array(row_hashes, type=pa.string()))
+        
+        # Write validated data to bronze layer destinations
+        pq_base = lake_root/'bronze'/'parquet'/'customers'
+        write_parquet_partitioned(validated_table, pq_base, partitioning=None, table_name='customers')
+        
+        # Also write to DuckDB
+        write_to_duckdb(validated_table, conn, 'customers')
+        
+        print(f"Loaded {len(validated_table)} valid rows to bronze layer (Parquet + DuckDB)")
+        mark_processed(conn, src, len(validated_table), 0, 'success')
+        
+    except Exception as e:
+        #Ongoing: Handle validation errors - write to rejects with reason
+        print(f"Customers: Schema validation FAILED - {e}")
 
 def load_products(raw_root, lake_root, conn):
     src = raw_root/'products.csv'
     if not src.exists(): return
     if already_processed(conn, src): return
     
-    # Read CSV and let PyArrow infer types
-    tbl = pacsv.read_csv(src, read_options=pacsv.ReadOptions(encoding='utf-8'))
+    # Read CSV and let PyArrow infer types initially
+    table = pacsv.read_csv(src, read_options=pacsv.ReadOptions(encoding='utf-8'))
     
-    print(f"Products - Original rows: {len(tbl)}")
-    print(f"Inferred schema: {tbl.schema}")
+    print(f"Products - Original rows: {len(table)}")
+    print(f"Inferred schema: {table.schema}")
     
-    # Add audit column
-    now = pa.scalar(dt.datetime.utcnow(), type=pa.timestamp('us'))
-    tbl = tbl.append_column('ingestion_ts', pa.array([now.as_py()]*len(tbl), type=pa.timestamp('us')))
-    
-    # Write to bronze layer destinations
-    pq_base = lake_root/'bronze'/'parquet'/'products'
-    write_parquet_partitioned(tbl, pq_base, partitioning=None, table_name='products')
-    
-    # Also write to DuckDB
-    write_to_duckdb(tbl, conn, 'products')
-    
-    print(f"Loaded {len(tbl)} rows to bronze layer (Parquet + DuckDB)")
-    mark_processed(conn, src, len(tbl), 0, 'success')
+    # Schema validation with reject handling
+    try:
+        # Cast to the expected schema
+        validated_table = table.cast(products_schema, safe=False)
+        print("Products: Schema validation PASSED")
+        
+        # Add audit columns to validated data
+        now = pa.scalar(dt.datetime.utcnow(), type=pa.timestamp('us'))
+        src_filename = src.name  # Extract filename from path
+        
+        # Generate src_row_hash
+        row_numbers = list(range(len(validated_table)))
+        row_hashes = [f"{src_filename}_{i}" for i in row_numbers]
+        
+        # Add all audit columns
+        validated_table = validated_table.append_column('ingestion_ts', pa.array([now.as_py()]*len(validated_table), type=pa.timestamp('us')))
+        validated_table = validated_table.append_column('src_filename', pa.array([src_filename]*len(validated_table), type=pa.string()))
+        validated_table = validated_table.append_column('src_row_hash', pa.array(row_hashes, type=pa.string()))
+        
+        # Write validated data to bronze layer destinations
+        pq_base = lake_root/'bronze'/'parquet'/'products'
+        write_parquet_partitioned(validated_table, pq_base, partitioning=None, table_name='products')
+        
+        # Also write to DuckDB
+        write_to_duckdb(validated_table, conn, 'products')
+        
+        print(f"Loaded {len(validated_table)} valid rows to bronze layer (Parquet + DuckDB)")
+        mark_processed(conn, src, len(validated_table), 0, 'success')
+        
+    except Exception as e:
+        #Ongoing: Handle validation errors - write to rejects with reason
+        print(f"Customers: Schema validation FAILED - {e}")
 
 def main():
     args = parse_args()
