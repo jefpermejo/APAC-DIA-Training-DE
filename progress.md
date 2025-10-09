@@ -108,13 +108,18 @@
 - **Oct 8, 2025:**
     - **Exercise 3 Progress**: Bronze layer ingestion implementation
     - Implemented bronze layer with traditional Python script approach:
-      - Dual output: DuckDB bronze schema + Parquet files
+      - Dual output: DuckDB bronze schema + Parquet files (Delta to follow)
       - Audit trail: ingestion_ts (src_filename, src_row_hash - ongoing)
       - Manifest tracking for idempotent processing
     - Successfully ingested customers (800 rows) and products (250 rows) with full schema validation
     - Commits: Bronze layer implementation with audit columns
     - Next Step: Continue expanding the bronze layer to ingest the remaining data
 
+- **Oct 9, 2025:**
+    - Added error handling in bronze ingestion
+    - Validated schema and ingested data successfully for customer and product
+    - Code block to write to rejects folder for invalid data
+    - Next: Ingest remaining datasets into bronze layer and review all requirements
 
 **Notes:**
 - Update this tracker regularly to keep track on progress/blockers.
