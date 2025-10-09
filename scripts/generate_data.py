@@ -49,8 +49,8 @@ def main():
             address_line1 = '' if i <= null_address_count else fake.street_address().replace(',', ' ')
             lat = -44 + random.random()*10; lon = 112 + random.random()*40
             birth = date(1960,1,1) + timedelta(days=random.randint(0, 20000))
-            join_ts = datetime(2024,1,1, tzinfo=timezone.utc) + timedelta(days=random.randint(0, 400), seconds=random.randint(0, 86399))
-            f.write(f"{i},{nk},{fake.first_name()},{fake.last_name()},{email},{phone},{address_line1},,{fake.city().replace(',',' ')},{fake.state_abbr()},{fake.postcode()},AU,{lat:.6f},{lon:.6f},{birth.isoformat()},{join_ts.isoformat()}Z,{str(random.random()<0.15)},{str(random.random()>0.05)}\n")
+            join_ts = datetime(2024,1,1) + timedelta(days=random.randint(0, 400), seconds=random.randint(0, 86399))
+            f.write(f"{i},{nk},{fake.first_name()},{fake.last_name()},{email},{phone},{address_line1},,{fake.city().replace(',',' ')},{fake.state_abbr()},{fake.postcode()},AU,{lat:.6f},{lon:.6f},{birth.isoformat()},{join_ts.isoformat()},{str(random.random()<0.15)},{str(random.random()>0.05)}\n")
     
     # Products table generation
     TARGET_PRODUCTS = 25000
@@ -86,11 +86,11 @@ def main():
             currency = random.choice(currencies)
             introduced_dt = date(2010,1,1) + timedelta(days=random.randint(0, 5000))
             is_discontinued = random.random() < 0.15
-            introduced_dt_dt = datetime.combine(introduced_dt, datetime.min.time(), tzinfo=timezone.utc)
+            introduced_dt_dt = datetime.combine(introduced_dt, datetime.min.time())
             discontinued_dt = '' if (is_discontinued and i <= null_discontinued_count) else (
-                (introduced_dt_dt + timedelta(days=random.randint(30, 2000))).isoformat() + 'Z' if is_discontinued else ''
+                (introduced_dt_dt + timedelta(days=random.randint(30, 2000))).isoformat() if is_discontinued else ''
             )
-            f.write(f"{i},{sku},{name},{category},{subcategory},{price},{currency},{introduced_dt_dt.isoformat()}Z,{discontinued_dt},{str(is_discontinued)}\n")
+            f.write(f"{i},{sku},{name},{category},{subcategory},{price},{currency},{introduced_dt_dt.isoformat()},{discontinued_dt},{str(is_discontinued)}\n")
 
     # Stores table generation
     TARGET_STORES = 5000
@@ -122,10 +122,10 @@ def main():
                 latitude = -44 + random.random()*10
                 longitude = 112 + random.random()*40
             open_dt = date(2010,1,1) + timedelta(days=random.randint(0, 5000))
-            open_dt_dt = datetime.combine(open_dt, datetime.min.time(), tzinfo=timezone.utc)
+            open_dt_dt = datetime.combine(open_dt, datetime.min.time())
             is_active = random.random() < 0.8
-            close_dt = '' if is_active else (open_dt_dt + timedelta(days=random.randint(30, 3000))).isoformat() + 'Z'
-            f.write(f"{i},{store_code},{name},{channel},{region},{state},{latitude},{longitude},{open_dt_dt.isoformat()}Z,{close_dt}\n")
+            close_dt = '' if is_active else (open_dt_dt + timedelta(days=random.randint(30, 3000))).isoformat()
+            f.write(f"{i},{store_code},{name},{channel},{region},{state},{latitude},{longitude},{open_dt_dt.isoformat()},{close_dt}\n")
 
     # Suppliers table generation
     TARGET_SUPPLIERS = 8000
@@ -191,14 +191,14 @@ def main():
                     customer_id = random.choice(valid_customer_ids)
                     store_id = random.choice(valid_store_ids)
 
-                order_ts = datetime.combine(order_dt, datetime.min.time(), tzinfo=timezone.utc) + timedelta(seconds=random.randint(0, 86399))
+                order_ts = datetime.combine(order_dt, datetime.min.time()) + timedelta(seconds=random.randint(0, 86399))
                 order_dt_local = order_dt.isoformat()
                 channel = random.choice(channels)
                 payment_method = random.choice(payment_methods)
                 coupon_code = '' if random.random() > 0.2 else f"COUPON-{rstr.rstr('A-Z0-9', 6)}"
                 shipping_fee = f"{round(np.random.normal(10, 5), 2):.2f}"
                 currency = random.choice(currencies)
-                f.write(f"{use_order_id},{order_ts.isoformat()}Z,{order_dt_local},{customer_id},{store_id},{channel},{payment_method},{coupon_code},{shipping_fee},{currency}\n")
+                f.write(f"{use_order_id},{order_ts.isoformat()},{order_dt_local},{customer_id},{store_id},{channel},{payment_method},{coupon_code},{shipping_fee},{currency}\n")
                 order_id += 1
 
     print(f"✅ Orders header written to partitioned directories in {out}/orders/")
@@ -288,7 +288,7 @@ def main():
                 else:
                     envelope = {
                         "event_id": event_id,
-                        "event_ts": (datetime.combine(event_dt, datetime.min.time(), tzinfo=timezone.utc) + timedelta(seconds=random.randint(0, 86399))).isoformat() + 'Z',
+                        "event_ts": (datetime.combine(event_dt, datetime.min.time()) + timedelta(seconds=random.randint(0, 86399))).isoformat(),
                         "event_type": random.choice(event_types),
                         "user_id": random.randint(1, 100000),
                         "session_id": f"SESS-{rstr.rstr('A-Z0-9', 10)}"
@@ -340,8 +340,8 @@ def main():
                         if sensor_id <= missing_ts_count:
                             sensor_ts = ''
                         else:
-                            ts = datetime.combine(month_dt.date(), datetime.min.time(), tzinfo=timezone.utc) + timedelta(days=random.randint(0,29), seconds=random.randint(0,86399))
-                            sensor_ts = ts.isoformat() + 'Z'
+                            ts = datetime.combine(month_dt.date(), datetime.min.time()) + timedelta(days=random.randint(0,29), seconds=random.randint(0,86399))
+                            sensor_ts = ts.isoformat()
                         shelf_id = random.choice(shelf_ids)
                         battery_mv = random.randint(2800, 4200)
                         f.write(f"{sensor_ts},{store_id},{shelf_id},{temperature_c},{humidity_pct},{battery_mv}\n")
@@ -387,7 +387,7 @@ def main():
     print(f"Generating {num_shipments} shipments...")
 
     carriers = ['AUSPOST', 'DHL', 'FEDEX', 'TNT', 'UPS']
-    start_ship_date = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    start_ship_date = datetime(2024, 1, 1)
     sla_days = 3
     null_delivered_count = int(num_shipments * 0.01)
     late_delivery_count = int(num_shipments * 0.01)
@@ -430,7 +430,7 @@ def main():
     return_ids = np.arange(1, num_returns + 1)
     order_ids = np.random.randint(1, int(1000000 * args.scale) + 1, num_returns)
     product_ids = np.random.randint(1, int(25000 * args.scale) + 1, num_returns)
-    return_ts = [datetime(2024, 1, 1, tzinfo=timezone.utc) + timedelta(days=random.randint(1, 90), seconds=random.randint(0, 86399)) for _ in range(num_returns)]
+    return_ts = [datetime(2024, 1, 1) + timedelta(days=random.randint(1, 90), seconds=random.randint(0, 86399)) for _ in range(num_returns)]
     qtys = np.random.randint(1, 5, num_returns)
     reasons = np.random.choice(['damaged', 'wrong_item', 'not_needed', 'expired', 'other'], num_returns)
 
