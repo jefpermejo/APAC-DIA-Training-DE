@@ -138,6 +138,8 @@ def main():
         for i in range(1, num_suppliers + 1):
             supplier_code = f"SUP-{rstr.rstr('A-Z0-9', 6)}"
             name = fake.company()
+            if ',' in name or '"' in name:
+                name = '"' + name.replace('"', '""') + '"'
             country_code = fake.country_code()
             lead_time_days = random.randint(2, 60)
             preferred = str(random.random() < 0.2)
