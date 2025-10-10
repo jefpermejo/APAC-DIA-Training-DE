@@ -121,6 +121,13 @@
     - Code block to write to rejects folder for invalid data
     - Next: Ingest remaining datasets into bronze layer and review all requirements
 
+- **Oct 10, 2025:**
+    - Fixed suppliers CSV quoting bug in data generation.
+    - Written output to Delta format for bronze layer.
+    - Ingested other CSV files into the bronze layer (+suppliers and stores(non-partitioned)).
+    - Committed and pushed changes to GitHub.
+    - Next step: Continue ingesting the remaining data formats and review the dbt implementation to plan the Silver layer.
+
 **Notes:**
 - Update this tracker regularly to keep track on progress/blockers.
 - Add details or blockers as needed.
