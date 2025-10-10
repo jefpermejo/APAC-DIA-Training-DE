@@ -21,6 +21,14 @@ PARQUET_PATH = "lake/bronze/parquet"
 DELTA_PATH = "lake/bronze/delta"
 REJECTS_PATH = "lake/_rejects"
 
+# Define all tables to ingest
+tables = [
+    {"name": "customers", "filename": "customers.csv", "schema": customers_schema, "write_delta": True},
+    {"name": "products", "filename": "products.csv", "schema": products_schema, "write_delta": True},
+    {"name": "stores", "filename": "stores.csv", "schema": stores_schema, "write_delta": True},
+    {"name": "suppliers", "filename": "suppliers.csv", "schema": suppliers_schema, "write_delta": True}
+    ]
+
 # Parse arguments
 def parse_args():
     ap = argparse.ArgumentParser()
@@ -29,11 +37,13 @@ def parse_args():
     ap.add_argument('--manifest', type=str, default=DUCKDB_PATH)
     return ap.parse_args()
 
+#Ensure directories exist
 def ensure_dirs(lake_root):
     for sub in ['bronze/parquet','bronze/delta']:
         (lake_root/sub).mkdir(parents=True, exist_ok=True)
     (lake_root/'_rejects').mkdir(parents=True, exist_ok=True)
 
+#Initialize manifest
 def init_manifest(conn):
     # Create table only if it doesn't exist (preserves existing data)
     conn.execute('''
@@ -45,6 +55,8 @@ def init_manifest(conn):
             status TEXT
         )
     ''')
+
+#Initialize bronze schema
 def init_bronze(conn): 
     # Check if bronze schema already exists
     existing_schemas = conn.execute("SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'bronze'").fetchall()
@@ -55,18 +67,19 @@ def init_bronze(conn):
         conn.execute("CREATE SCHEMA bronze")
         print("Created bronze schema")
 
+# Check if file already processed
 def already_processed(conn, p): return conn.execute("SELECT 1 FROM manifest_processed_files WHERE src_path = ?", [str(p)]).fetchone() is not None
 
+# Mark file as processed
 def mark_processed(conn, src_path, row_count, reject_count=0, status='success'):
     """Mark file as processed in manifest with full tracking"""
     conn.execute(
         "INSERT OR REPLACE INTO manifest_processed_files VALUES (?, ?, ?, ?, ?)", 
         [str(src_path), dt.datetime.utcnow(), row_count, reject_count, status]
     )
-
+# Write to Delta Lake with partitioning
 def write_delta_partitioned(table, base_path, partitioning=None, table_name=None):
-    if write_deltalake is None:
-        raise ImportError("deltalake package is not available")
+
     base_path.mkdir(parents=True, exist_ok=True)
     print(f"[DEBUG] Attempting to write to Delta Lake: path={base_path}, rows={len(table)}, partition_by={partitioning}")
     try:
@@ -75,6 +88,7 @@ def write_delta_partitioned(table, base_path, partitioning=None, table_name=None
     except Exception as e:
         print(f"[ERROR] Failed to write to Delta Lake: {e}")
 
+# Write to Parquet with partitioning
 def write_parquet_partitioned(table, base_path, partitioning=None, table_name=None):
     """Write table to parquet with custom filename"""
     base_path.mkdir(parents=True, exist_ok=True)
@@ -88,6 +102,7 @@ def write_parquet_partitioned(table, base_path, partitioning=None, table_name=No
         pads.write_dataset(table, base_dir=str(base_path), format='parquet', 
                           partitioning=partitioning, existing_data_behavior='overwrite_or_ignore')
 
+#Write to DuckDB
 def write_to_duckdb(table, conn, table_name):
     """Write PyArrow table to DuckDB bronze schema"""
     try:
@@ -101,25 +116,29 @@ def write_to_duckdb(table, conn, table_name):
         print(f"Failed to write to DuckDB: {e}")
         raise
 
-def load_customers(raw_root, lake_root, conn):
-    src = raw_root/'customers.csv'
-    if not src.exists(): return
+
+# Ingest for any csv table with schema validation, audit columns, rejects, and manifest tracking
+def load_table(raw_root, lake_root, conn, table_def):
+    src = raw_root / table_def['filename']
+    if not src.exists():
+        print(f"[INFO] {src} does not exist, skipping.")
+        return
     if already_processed(conn, src):
         print(f"[INFO] {src} already processed, skipping.")
         return
-    
-    # Read CSV
+
+    # Read CSV (or other format in future)
     table = pacsv.read_csv(src, read_options=pacsv.ReadOptions(encoding='utf-8'))
-    
-    print(f"Customers - Original rows: {len(table)}")
+
+    print(f"{table_def['name'].capitalize()} - Original rows: {len(table)}")
     print(f"Inferred schema: {table.schema}")
-    
+
     # Schema validation with reject handling
     try:
         # Cast to the expected schema
-        validated_table = table.cast(customers_schema, safe=False)
-        print("Customers: Schema validation PASSED")
-        
+        validated_table = table.cast(table_def['schema'], safe=False)
+        print(f"{table_def['name'].capitalize()}: Schema validation PASSED")
+
         # Add audit columns to validated data
         now = pa.scalar(dt.datetime.utcnow(), type=pa.timestamp('us'))
         src_filename = src.name  # Extract filename from path
@@ -127,110 +146,49 @@ def load_customers(raw_root, lake_root, conn):
         # Generate src_row_hash
         row_numbers = list(range(len(validated_table)))
         row_hashes = [f"{src_filename}_{i}" for i in row_numbers]
-        
+
         # Add all audit columns
         validated_table = validated_table.append_column('ingestion_ts', pa.array([now.as_py()]*len(validated_table), type=pa.timestamp('us')))
         validated_table = validated_table.append_column('src_filename', pa.array([src_filename]*len(validated_table), type=pa.string()))
         validated_table = validated_table.append_column('src_row_hash', pa.array(row_hashes, type=pa.string()))
-        
-        # Write validated data to bronze layer destinations
-        pq_base = lake_root/'bronze'/'parquet'/'customers'
-        write_parquet_partitioned(validated_table, pq_base, partitioning=None, table_name='customers')
 
-        # Write to Delta Lake
-        delta_base = lake_root/'bronze'/'delta'/'customers'
-        write_delta_partitioned(validated_table, delta_base, partitioning=None, table_name='customers')
-        
+        # Write validated data to bronze layer destinations - Parquet
+        pq_base = lake_root/'bronze'/'parquet'/table_def['name']
+        write_parquet_partitioned(validated_table, pq_base, partitioning=None, table_name=table_def['name'])
+
+        # Write validated data to bronze layer destinations - Delta
+        if table_def.get('write_delta', True):
+            delta_base = lake_root/'bronze'/'delta'/table_def['name']
+            write_delta_partitioned(validated_table, delta_base, partitioning=None, table_name=table_def['name'])
+
         # Also write to DuckDB
-        write_to_duckdb(validated_table, conn, 'customers')
-        
+        write_to_duckdb(validated_table, conn, table_def['name'])
+
         print(f"Loaded {len(validated_table)} valid rows to bronze layer (Parquet + DuckDB)")
         mark_processed(conn, src, len(validated_table), 0, 'success')
-        
+
     except Exception as e:
         # Handle validation errors - write to rejects with reason
-        print(f"Products: Schema validation FAILED - {e}")
-        
+        print(f"{table_def['name'].capitalize()}: Schema validation FAILED - {e}")
+
         # Create rejects directory
         rejects_path = lake_root / '_rejects'
         rejects_path.mkdir(parents=True, exist_ok=True)
-        
+
         # Add rejection reason and timestamp
         rejection_reason = f"Schema validation failed: {str(e)}"
         reject_table = table.append_column('rejection_reason', pa.array([rejection_reason] * len(table)))
         reject_table = reject_table.append_column('rejected_at', pa.array([dt.datetime.utcnow()] * len(table)))
-        
+
         # Write rejected data
-        reject_file = rejects_path / f"customers_schema_reject_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.parquet"
+        reject_file = rejects_path / f"{table_def['name']}_schema_reject_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.parquet"
         pq.write_table(reject_table, str(reject_file))
         print(f"Rejected data written to: {reject_file}")
-        
+
         # Mark as processed with all rows rejected
         mark_processed(conn, src, 0, len(table), 'all_rejected')
 
-def load_products(raw_root, lake_root, conn):
-    src = raw_root/'products.csv'
-    if not src.exists(): return
-    if already_processed(conn, src):
-        print(f"[INFO] {src} already processed, skipping.")
-        return
-    
-    # Read CSV and let PyArrow infer types initially
-    table = pacsv.read_csv(src, read_options=pacsv.ReadOptions(encoding='utf-8'))
-    
-    print(f"Products - Original rows: {len(table)}")
-    print(f"Inferred schema: {table.schema}")
-    
-    # Schema validation with reject handling
-    try:
-        # Cast to the expected schema
-        validated_table = table.cast(products_schema, safe=False)
-        print("Products: Schema validation PASSED")
-        
-        # Add audit columns to validated data
-        now = pa.scalar(dt.datetime.utcnow(), type=pa.timestamp('us'))
-        src_filename = src.name  # Extract filename from path
-        
-        # Generate src_row_hash
-        row_numbers = list(range(len(validated_table)))
-        row_hashes = [f"{src_filename}_{i}" for i in row_numbers]
-        
-        # Add all audit columns
-        validated_table = validated_table.append_column('ingestion_ts', pa.array([now.as_py()]*len(validated_table), type=pa.timestamp('us')))
-        validated_table = validated_table.append_column('src_filename', pa.array([src_filename]*len(validated_table), type=pa.string()))
-        validated_table = validated_table.append_column('src_row_hash', pa.array(row_hashes, type=pa.string()))
-        
-        # Write validated data to bronze layer destinations
-        pq_base = lake_root/'bronze'/'parquet'/'products'
-        write_parquet_partitioned(validated_table, pq_base, partitioning=None, table_name='products')
-        
-        # Also write to DuckDB
-        write_to_duckdb(validated_table, conn, 'products')
-        
-        print(f"Loaded {len(validated_table)} valid rows to bronze layer (Parquet + DuckDB)")
-        mark_processed(conn, src, len(validated_table), 0, 'success')
-        
-    except Exception as e:
-        # Handle validation errors - write to rejects with reason
-        print(f"Products: Schema validation FAILED - {e}")
-        
-        # Create rejects directory
-        rejects_path = lake_root / '_rejects'
-        rejects_path.mkdir(parents=True, exist_ok=True)
-        
-        # Add rejection reason and timestamp
-        rejection_reason = f"Schema validation failed: {str(e)}"
-        reject_table = table.append_column('rejection_reason', pa.array([rejection_reason] * len(table)))
-        reject_table = reject_table.append_column('rejected_at', pa.array([dt.datetime.utcnow()] * len(table)))
-        
-        # Write rejected data
-        reject_file = rejects_path / f"products_schema_reject_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.parquet"
-        pq.write_table(reject_table, str(reject_file))
-        print(f"Rejected data written to: {reject_file}")
-        
-        # Mark as processed with all rows rejected
-        mark_processed(conn, src, 0, len(table), 'all_rejected')
-
+# Main function
 def main():
     args = parse_args()
     raw_root = pathlib.Path(args.raw)
@@ -242,11 +200,11 @@ def main():
     init_manifest(conn)
     init_bronze(conn)
 
-    print("Processing bronze layer: customers and products")
-    load_customers(raw_root, lake_root, conn)
-    load_products(raw_root, lake_root, conn)
+    print("Processing bronze layer tables:")
+    for table_def in tables:
+        load_table(raw_root, lake_root, conn, table_def)
 
-    print("Bronze load completed for customers and products.")
+    print("Bronze load completed for all tables.")
 
 if __name__ == '__main__':
     main()
