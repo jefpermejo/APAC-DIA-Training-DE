@@ -13,6 +13,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
 from schemas import *
+from deltalake import write_deltalake
 
 # Define paths
 DUCKDB_PATH = "duckdb/warehouse.duckdb"
@@ -20,12 +21,7 @@ PARQUET_PATH = "lake/bronze/parquet"
 DELTA_PATH = "lake/bronze/delta"
 REJECTS_PATH = "lake/_rejects"
 
-
-try:
-    from deltalake import write_deltalake
-except Exception as e:
-    write_deltalake = None
-
+# Parse arguments
 def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument('--raw', type=str, default='data_raw/samples')
@@ -68,6 +64,17 @@ def mark_processed(conn, src_path, row_count, reject_count=0, status='success'):
         [str(src_path), dt.datetime.utcnow(), row_count, reject_count, status]
     )
 
+def write_delta_partitioned(table, base_path, partitioning=None, table_name=None):
+    if write_deltalake is None:
+        raise ImportError("deltalake package is not available")
+    base_path.mkdir(parents=True, exist_ok=True)
+    print(f"[DEBUG] Attempting to write to Delta Lake: path={base_path}, rows={len(table)}, partition_by={partitioning}")
+    try:
+        write_deltalake(str(base_path), table, partition_by=partitioning, mode='append')
+        print(f"[DEBUG] Written {len(table)} rows to Delta Lake at: {base_path}")
+    except Exception as e:
+        print(f"[ERROR] Failed to write to Delta Lake: {e}")
+
 def write_parquet_partitioned(table, base_path, partitioning=None, table_name=None):
     """Write table to parquet with custom filename"""
     base_path.mkdir(parents=True, exist_ok=True)
@@ -97,7 +104,9 @@ def write_to_duckdb(table, conn, table_name):
 def load_customers(raw_root, lake_root, conn):
     src = raw_root/'customers.csv'
     if not src.exists(): return
-    if already_processed(conn, src): return
+    if already_processed(conn, src):
+        print(f"[INFO] {src} already processed, skipping.")
+        return
     
     # Read CSV
     table = pacsv.read_csv(src, read_options=pacsv.ReadOptions(encoding='utf-8'))
@@ -127,6 +136,10 @@ def load_customers(raw_root, lake_root, conn):
         # Write validated data to bronze layer destinations
         pq_base = lake_root/'bronze'/'parquet'/'customers'
         write_parquet_partitioned(validated_table, pq_base, partitioning=None, table_name='customers')
+
+        # Write to Delta Lake
+        delta_base = lake_root/'bronze'/'delta'/'customers'
+        write_delta_partitioned(validated_table, delta_base, partitioning=None, table_name='customers')
         
         # Also write to DuckDB
         write_to_duckdb(validated_table, conn, 'customers')
@@ -158,7 +171,9 @@ def load_customers(raw_root, lake_root, conn):
 def load_products(raw_root, lake_root, conn):
     src = raw_root/'products.csv'
     if not src.exists(): return
-    if already_processed(conn, src): return
+    if already_processed(conn, src):
+        print(f"[INFO] {src} already processed, skipping.")
+        return
     
     # Read CSV and let PyArrow infer types initially
     table = pacsv.read_csv(src, read_options=pacsv.ReadOptions(encoding='utf-8'))
