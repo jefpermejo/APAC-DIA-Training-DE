@@ -26,7 +26,8 @@ tables = [
     {"name": "customers", "filename": "customers.csv", "schema": customers_schema, "write_delta": True},
     {"name": "products", "filename": "products.csv", "schema": products_schema, "write_delta": True},
     {"name": "stores", "filename": "stores.csv", "schema": stores_schema, "write_delta": True},
-    {"name": "suppliers", "filename": "suppliers.csv", "schema": suppliers_schema, "write_delta": True}
+    {"name": "suppliers", "filename": "suppliers.csv", "schema": suppliers_schema, "write_delta": True},
+    {"name": "orders_header", "filename": "orders", "schema": orders_header_schema, "write_delta": True, "partitioned": True, "file_pattern": "part-*.csv"}
     ]
 
 # Parse arguments
@@ -119,16 +120,29 @@ def write_to_duckdb(table, conn, table_name):
 
 # Ingest for any csv table with schema validation, audit columns, rejects, and manifest tracking
 def load_table(raw_root, lake_root, conn, table_def):
-    src = raw_root / table_def['filename']
-    if not src.exists():
-        print(f"[INFO] {src} does not exist, skipping.")
-        return
-    if already_processed(conn, src):
-        print(f"[INFO] {src} already processed, skipping.")
-        return
-
-    # Read CSV (or other format in future)
-    table = pacsv.read_csv(src, read_options=pacsv.ReadOptions(encoding='utf-8'))
+    # Support partitioned tables (CSV files in subfolders)
+    if table_def.get('partitioned', False):
+        # Find all CSV files recursively under the partitioned folder, filtered by pattern
+        src_dir = raw_root / table_def['filename']
+        pattern = table_def.get('file_pattern', '*.csv')
+        csv_files = list(src_dir.rglob(pattern))
+        if not csv_files:
+            print(f"[INFO] No CSV files matching {pattern} found in {src_dir}, skipping.")
+            return
+        # Efficiently read and concatenate all CSVs
+        tables = [pacsv.read_csv(f, read_options=pacsv.ReadOptions(encoding='utf-8')) for f in csv_files]
+        table = pa.concat_tables(tables)
+        src_display = f"{src_dir} ({len(csv_files)} files, pattern: {pattern})"
+    else:
+        src = raw_root / table_def['filename']
+        if not src.exists():
+            print(f"[INFO] {src} does not exist, skipping.")
+            return
+        if already_processed(conn, src):
+            print(f"[INFO] {src} already processed, skipping.")
+            return
+        table = pacsv.read_csv(src, read_options=pacsv.ReadOptions(encoding='utf-8'))
+        src_display = str(src)
 
     print(f"{table_def['name'].capitalize()} - Original rows: {len(table)}")
     print(f"Inferred schema: {table.schema}")
@@ -141,7 +155,11 @@ def load_table(raw_root, lake_root, conn, table_def):
 
         # Add audit columns to validated data
         now = pa.scalar(dt.datetime.utcnow(), type=pa.timestamp('us'))
-        src_filename = src.name  # Extract filename from path
+        # For partitioned, using a generic src_filename for now
+        if table_def.get('partitioned', False):
+            src_filename = table_def['filename']
+        else:
+            src_filename = src.name
 
         # Generate src_row_hash
         row_numbers = list(range(len(validated_table)))
@@ -165,7 +183,11 @@ def load_table(raw_root, lake_root, conn, table_def):
         write_to_duckdb(validated_table, conn, table_def['name'])
 
         print(f"Loaded {len(validated_table)} valid rows to bronze layer (Parquet + DuckDB)")
-        mark_processed(conn, src, len(validated_table), 0, 'success')
+        # For partitioned, mark the directory as processed; for non-partitioned, mark the file
+        if table_def.get('partitioned', False):
+            mark_processed(conn, src_display, len(validated_table), 0, 'success')
+        else:
+            mark_processed(conn, src, len(validated_table), 0, 'success')
 
     except Exception as e:
         # Handle validation errors - write to rejects with reason
