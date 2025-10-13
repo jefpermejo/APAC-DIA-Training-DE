@@ -66,7 +66,7 @@
 - [ ] Ongoing bronze layer ingestion
 
 ### Exercise 4: Silver Layer
-- [ ] Not started
+- [ ] Ongoing review
 
 ### Exercise 5: Gold Layer
 - [ ] Not started
@@ -128,6 +128,16 @@
     - Committed and pushed changes to GitHub.
     - Next step: Continue ingesting the remaining data formats and review the dbt implementation to plan the Silver layer.
 
+- **Oct 13, 2025:**
+    - Committed and pushed:
+        - Add partitioned: False to non-partitioned tables in load_to_bronze.py
+        - Added orders_header, orders_lines and sensors data (remaining partitioned files) to bronze ingestion
+        - Find all CSV files recursively under the partitioned folder
+    - Ongoing: Reviewing dbt to prepare for Exercise 4 (Silver ingestion).
+    - Next steps:
+        - Continue bronze ingestion for other file types: JSON, Delta, XLSX, Parquet
+        - Start Silver layer development for the ingested csv files (Exercise 4)
+
 **Notes:**
 - Update this tracker regularly to keep track on progress/blockers.
-- Add details or blockers as needed.
+- Add details or blockers as needed
