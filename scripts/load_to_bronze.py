@@ -23,10 +23,10 @@ REJECTS_PATH = "lake/_rejects"
 
 # Define all tables to ingest
 tables = [
-    {"name": "customers", "filename": "customers.csv", "schema": customers_schema, "write_delta": True},
-    {"name": "products", "filename": "products.csv", "schema": products_schema, "write_delta": True},
-    {"name": "stores", "filename": "stores.csv", "schema": stores_schema, "write_delta": True},
-    {"name": "suppliers", "filename": "suppliers.csv", "schema": suppliers_schema, "write_delta": True},
+    {"name": "customers", "filename": "customers.csv", "schema": customers_schema, "write_delta": True, "partitioned": False},
+    {"name": "products", "filename": "products.csv", "schema": products_schema, "write_delta": True, "partitioned": False},
+    {"name": "stores", "filename": "stores.csv", "schema": stores_schema, "write_delta": True, "partitioned": False},
+    {"name": "suppliers", "filename": "suppliers.csv", "schema": suppliers_schema, "write_delta": True, "partitioned": False},
     {"name": "orders_header", "filename": "orders", "schema": orders_header_schema, "write_delta": True, "partitioned": True, "file_pattern": "part-*.csv"},
     {"name": "orders_lines", "filename": "orders", "schema": orders_lines_schema, "write_delta": True, "partitioned": True, "file_pattern": "order_lines.csv"},
     {"name": "sensors", "filename": "sensors", "schema": sensors_schema, "write_delta": True, "partitioned": True, "file_pattern": "sensors.csv"}
