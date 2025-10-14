@@ -15,6 +15,7 @@ sys.path.insert(0, parent_dir)
 from schemas import *
 from deltalake import write_deltalake
 import pandas as pd
+import pyarrow.json as pajson
 
 # Define paths
 DUCKDB_PATH = "duckdb/warehouse.duckdb"
@@ -32,7 +33,8 @@ tables = [
     {"name": "orders_lines", "filename": "orders", "format": "csv", "schema": orders_lines_schema, "write_delta": True, "partitioned": True, "file_pattern": "order_lines.csv"},
     {"name": "sensors", "filename": "sensors", "format": "csv", "schema": sensors_schema, "write_delta": True, "partitioned": True, "file_pattern": "sensors.csv"},
     {"name": "exchange_rates", "filename": "exchange_rates.xlsx", "format": "xlsx", "schema": exchange_rates_schema, "write_delta": True, "partitioned": False},
-    {"name": "shipments", "filename": "shipments.parquet", "schema": shipments_schema, "format": "parquet", "write_delta": True, "partitioned": False, "file_pattern": "*.parquet"}
+    {"name": "shipments", "filename": "shipments.parquet", "schema": shipments_schema, "format": "parquet", "write_delta": True, "partitioned": False, "file_pattern": "*.parquet"},
+    {"name": "events", "filename": "events", "format": "json", "schema": events_schema, "write_delta": True, "partitioned": True, "file_pattern": "*.jsonl"}
     ]
 
 # Parse arguments
@@ -93,6 +95,8 @@ def read_table_by_format(file_path, format):
         return pa.Table.from_pandas(df)
     elif format == "parquet":
         return pq.read_table(file_path)
+    elif format == "json":
+        return pajson.read_json(file_path)
     else:
         raise ValueError(f"Unsupported format: {format}")
     
