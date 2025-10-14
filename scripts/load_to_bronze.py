@@ -14,6 +14,7 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
 from schemas import *
 from deltalake import write_deltalake
+import pandas as pd
 
 # Define paths
 DUCKDB_PATH = "duckdb/warehouse.duckdb"
@@ -23,13 +24,14 @@ REJECTS_PATH = "lake/_rejects"
 
 # Define all tables to ingest
 tables = [
-    {"name": "customers", "filename": "customers.csv", "schema": customers_schema, "write_delta": True, "partitioned": False},
-    {"name": "products", "filename": "products.csv", "schema": products_schema, "write_delta": True, "partitioned": False},
-    {"name": "stores", "filename": "stores.csv", "schema": stores_schema, "write_delta": True, "partitioned": False},
-    {"name": "suppliers", "filename": "suppliers.csv", "schema": suppliers_schema, "write_delta": True, "partitioned": False},
-    {"name": "orders_header", "filename": "orders", "schema": orders_header_schema, "write_delta": True, "partitioned": True, "file_pattern": "part-*.csv"},
-    {"name": "orders_lines", "filename": "orders", "schema": orders_lines_schema, "write_delta": True, "partitioned": True, "file_pattern": "order_lines.csv"},
-    {"name": "sensors", "filename": "sensors", "schema": sensors_schema, "write_delta": True, "partitioned": True, "file_pattern": "sensors.csv"}
+    {"name": "customers", "filename": "customers.csv", "format": "csv", "schema": customers_schema, "write_delta": True, "partitioned": False},
+    {"name": "products", "filename": "products.csv", "format": "csv", "schema": products_schema, "write_delta": True, "partitioned": False},
+    {"name": "stores", "filename": "stores.csv", "format": "csv", "schema": stores_schema, "write_delta": True, "partitioned": False},
+    {"name": "suppliers", "filename": "suppliers.csv", "format": "csv", "schema": suppliers_schema, "write_delta": True, "partitioned": False},
+    {"name": "orders_header", "filename": "orders", "format": "csv", "schema": orders_header_schema, "write_delta": True, "partitioned": True, "file_pattern": "part-*.csv"},
+    {"name": "orders_lines", "filename": "orders", "format": "csv", "schema": orders_lines_schema, "write_delta": True, "partitioned": True, "file_pattern": "order_lines.csv"},
+    {"name": "sensors", "filename": "sensors", "format": "csv", "schema": sensors_schema, "write_delta": True, "partitioned": True, "file_pattern": "sensors.csv"},
+    {"name": "exchange_rates", "filename": "exchange_rates.xlsx", "format": "xlsx", "schema": exchange_rates_schema, "write_delta": True, "partitioned": False}
     ]
 
 # Parse arguments
@@ -80,6 +82,17 @@ def mark_processed(conn, src_path, row_count, reject_count=0, status='success'):
         "INSERT OR REPLACE INTO manifest_processed_files VALUES (?, ?, ?, ?, ?)", 
         [str(src_path), dt.datetime.utcnow(), row_count, reject_count, status]
     )
+
+# Read table by format
+def read_table_by_format(file_path, format):
+    if format == "csv":
+        return pacsv.read_csv(file_path, read_options=pacsv.ReadOptions(encoding='utf-8'))
+    elif format == "xlsx":
+        df = pd.read_excel(file_path)
+        return pa.Table.from_pandas(df)
+    else:
+        raise ValueError(f"Unsupported format: {format}")
+    
 # Write to Delta Lake with partitioning
 def write_delta_partitioned(table, base_path, partitioning=None, table_name=None):
 
@@ -123,18 +136,19 @@ def write_to_duckdb(table, conn, table_name):
 # Ingest for any csv table with schema validation, audit columns, rejects, and manifest tracking
 def load_table(raw_root, lake_root, conn, table_def):
     # Support partitioned tables (CSV files in subfolders)
+    format = table_def.get('format', 'csv')
     if table_def.get('partitioned', False):
-        # Find all CSV files recursively under the partitioned folder, filtered by pattern
+        # Find all files recursively under the partitioned folder, filtered by pattern
         src_dir = raw_root / table_def['filename']
         pattern = table_def.get('file_pattern', '*.csv')
-        csv_files = list(src_dir.rglob(pattern))
-        if not csv_files:
-            print(f"[INFO] No CSV files matching {pattern} found in {src_dir}, skipping.")
+        files = list(src_dir.rglob(pattern))
+        if not files:
+            print(f"[INFO] No files matching {pattern} found in {src_dir}, skipping.")
             return
-        # Efficiently read and concatenate all CSVs
-        tables = [pacsv.read_csv(f, read_options=pacsv.ReadOptions(encoding='utf-8')) for f in csv_files]
+        # Read and concatenate all files
+        tables = [read_table_by_format(f, format) for f in files]
         table = pa.concat_tables(tables)
-        src_display = f"{src_dir} ({len(csv_files)} files, pattern: {pattern})"
+        src_display = f"{src_dir} ({len(files)} files, pattern: {pattern})"
     else:
         src = raw_root / table_def['filename']
         if not src.exists():
@@ -143,7 +157,7 @@ def load_table(raw_root, lake_root, conn, table_def):
         if already_processed(conn, src):
             print(f"[INFO] {src} already processed, skipping.")
             return
-        table = pacsv.read_csv(src, read_options=pacsv.ReadOptions(encoding='utf-8'))
+        table = read_table_by_format(src, format)
         src_display = str(src)
 
     print(f"{table_def['name'].capitalize()} - Original rows: {len(table)}")
