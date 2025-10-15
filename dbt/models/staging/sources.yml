@@ -11,3 +11,6 @@ sources:
      - name: stores
        meta:
         external_location: "read_parquet('../lake/bronze/parquet/stores/stores.parquet')"
+     - name: suppliers
+       meta:
+        external_location: "read_parquet('../lake/bronze/parquet/suppliers/suppliers.parquet')"

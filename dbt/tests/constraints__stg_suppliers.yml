@@ -1,0 +1,19 @@
+version: 2
+models:
+ - name: stg_suppliers
+   columns:
+     - name: supplier_id
+       data_type: bigint
+       tests:
+         - unique
+         - not_null
+     - name: supplier_code
+       data_type: varchar
+     - name: name
+       data_type: varchar
+     - name: country_code
+       data_type: varchar
+     - name: lead_time_days
+       data_type: integer
+     - name: preferred
+       data_type: boolean
