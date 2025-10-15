@@ -1,0 +1,7 @@
+version: 2
+sources:
+ - name: main_stg
+   tables:
+     - name: customers
+       meta:
+        external_location: "read_parquet('../lake/bronze/parquet/customers/customers.parquet')"
