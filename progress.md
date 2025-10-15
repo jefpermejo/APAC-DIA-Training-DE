@@ -137,6 +137,7 @@
     - Next steps:
         - Continue bronze ingestion for other file types: JSON, Delta, XLSX, Parquet
         - Start Silver layer development for the ingested csv files (Exercise 4)
+        
 **Oct 14, 2025:**
     - Committed and pushed:
         - Added support for additional file formats in bronze ingestion: enabled XLSX reader and ingestion logic.
@@ -144,6 +145,15 @@
         - (WIP) Add initial JSON ingestion script for Bronze layer (handling malformed data next).
     - Ongoing: Studying dbt to start Silver layer implementation tomorrow for available ingested data in bronze layer.
 
+**Oct 15, 2025:**
+    - Focused on Silver layer development in dbt (Exercise 4).
+    - Built and refined staging models for customers, suppliers, stores, and products:
+        - Applied data cleaning, type casting, and trimming to ensure consistency and quality (trimming, casting, standardization).
+    - Validated all staging models with dbt tests and updated constraints as required.
+    - Improved Bronze ingestion pipeline (Exercise 3):
+        - Added initial Delta ingestion logic to the Bronze layer (WIP). 
+    - Pushed all changes to the assessment-solution branch for review.
+    
 **Notes:**
 - Update this tracker regularly to keep track on progress/blockers.
 - Add details or blockers as needed
