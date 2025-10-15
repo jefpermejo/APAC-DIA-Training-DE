@@ -1,0 +1,27 @@
+version: 2
+models:
+ - name: stg_stores
+   columns:
+     - name: store_id
+       data_type: bigint
+       tests:
+         - unique
+         - not_null
+     - name: store_code
+       data_type: varchar
+     - name: name
+       data_type: varchar
+     - name: channel
+       data_type: varchar
+     - name: region
+       data_type: varchar
+     - name: state
+       data_type: varchar
+     - name: latitude
+       data_type: double
+     - name: longitude
+       data_type: double
+     - name: open_dt
+       data_type: date
+     - name: close_dt
+       data_type: date

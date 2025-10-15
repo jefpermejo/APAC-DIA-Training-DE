@@ -8,3 +8,6 @@ sources:
      - name: products
        meta:
         external_location: "read_parquet('../lake/bronze/parquet/products/products.parquet')"
+     - name: stores
+       meta:
+        external_location: "read_parquet('../lake/bronze/parquet/stores/stores.parquet')"
