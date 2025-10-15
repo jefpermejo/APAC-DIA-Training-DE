@@ -1,17 +1,22 @@
 {{ config(materialized='table', contract={'enforced': true}) }}
 
 with src as (
-  select * from bronze_customers_parquet
+  select * from {{ source('main_stg', 'customers') }}
 ),
-typed as (
+cleaned_customers as (
   select
     cast(customer_id as bigint) as customer_id,
     natural_key,
     trim(first_name) as first_name,
     trim(last_name) as last_name,
-    email,
-    phone,
-    address_line1, address_line2, city, state_region, postcode, country_code,
+    lower(trim(email)) as email,
+    trim(phone) as phone,
+    trim(address_line1) as address_line1, 
+    trim(address_line2) as address_line2, 
+    trim(city) as city, 
+    upper(trim(state_region)) as state_region,
+    upper(trim(postcode)) as postcode, 
+    upper(trim(country_code)) as country_code,
     cast(latitude as double) as latitude,
     cast(longitude as double) as longitude,
     cast(birth_date as date) as birth_date,
@@ -20,4 +25,5 @@ typed as (
     cast(gdpr_consent as boolean) as gdpr_consent
   from src
 )
-select * from typed;
+
+select * from cleaned_customers
