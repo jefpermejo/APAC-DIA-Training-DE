@@ -13,7 +13,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
 from schemas import *
-from deltalake import write_deltalake
+from deltalake import write_deltalake, DeltaTable
 import pandas as pd
 import pyarrow.json as pajson
 
@@ -34,7 +34,8 @@ tables = [
     {"name": "sensors", "filename": "sensors", "format": "csv", "schema": sensors_schema, "write_delta": True, "partitioned": True, "file_pattern": "sensors.csv"},
     {"name": "exchange_rates", "filename": "exchange_rates.xlsx", "format": "xlsx", "schema": exchange_rates_schema, "write_delta": True, "partitioned": False},
     {"name": "shipments", "filename": "shipments.parquet", "schema": shipments_schema, "format": "parquet", "write_delta": True, "partitioned": False, "file_pattern": "*.parquet"},
-    {"name": "events", "filename": "events", "format": "json", "schema": events_schema, "write_delta": True, "partitioned": True, "file_pattern": "*.jsonl"}
+    {"name": "events", "filename": "events", "format": "json", "schema": events_schema, "write_delta": True, "partitioned": True, "file_pattern": "*.jsonl"},
+    {"name": "returns", "filename": "returns/returns_delta", "schema": returns_day1_schema, "format": "delta", "write_delta": True, "partitioned": False}
     ]
 
 # Parse arguments
@@ -97,6 +98,9 @@ def read_table_by_format(file_path, format):
         return pq.read_table(file_path)
     elif format == "json":
         return pajson.read_json(file_path)
+    elif format == "delta":
+        dt_table = DeltaTable(file_path)
+        return dt_table.to_pyarrow_table()
     else:
         raise ValueError(f"Unsupported format: {format}")
     
