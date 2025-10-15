@@ -5,3 +5,6 @@ sources:
      - name: customers
        meta:
         external_location: "read_parquet('../lake/bronze/parquet/customers/customers.parquet')"
+     - name: products
+       meta:
+        external_location: "read_parquet('../lake/bronze/parquet/products/products.parquet')"

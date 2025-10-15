@@ -1,0 +1,27 @@
+version: 2
+models:
+ - name: stg_products
+   columns:
+     - name: product_id
+       data_type: bigint
+       tests:
+         - unique
+         - not_null
+     - name: sku
+       data_type: varchar
+     - name: name
+       data_type: varchar
+     - name: category
+       data_type: varchar
+     - name: subcategory
+       data_type: varchar
+     - name: current_price
+       data_type: double
+     - name: currency
+       data_type: varchar
+     - name: is_discontinued
+       data_type: boolean
+     - name: introduced_dt
+       data_type: date
+     - name: discontinued_dt
+       data_type: date
