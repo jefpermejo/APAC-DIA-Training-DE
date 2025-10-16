@@ -20,3 +20,6 @@ sources:
      - name: orders_lines
        meta:
         external_location: "read_parquet('../lake/bronze/parquet/orders_lines/orders_lines.parquet')"
+     - name: sensors
+       meta:
+        external_location: "read_parquet('../lake/bronze/parquet/sensors/sensors.parquet')"

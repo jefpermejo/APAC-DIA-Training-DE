@@ -1,0 +1,18 @@
+version: 2
+models:
+ - name: stg_sensors
+   columns:
+     - name: sensor_ts
+       data_type: timestamp
+     - name: store_id
+       data_type: bigint
+       tests:
+         - not_null
+     - name: shelf_id
+       data_type: varchar
+     - name: temperature_celcius
+       data_type: double
+     - name: humidity_percent
+       data_type: double
+     - name: battery_mv
+       data_type: integer
