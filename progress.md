@@ -153,7 +153,18 @@
     - Improved Bronze ingestion pipeline (Exercise 3):
         - Added initial Delta ingestion logic to the Bronze layer (WIP). 
     - Pushed all changes to the assessment-solution branch for review.
-    
+
+- **Oct 16, 2025:**
+    - Cleaned and staged the following dbt models (Exercise 4):
+        - orders_header
+        - orders_lines
+        - sensors
+        - exchange_rates
+        - shipments
+    - Applied data cleaning, type casting, and trimming to ensure consistency and quality in all staging models.
+    - Updated and validated constraints and tests for each staging model.
+    - Next Step: Continue with events and returns tables when data is available. For the staged tables, further enrich and progress them to the Silver layer.
+
 **Notes:**
 - Update this tracker regularly to keep track on progress/blockers.
 - Add details or blockers as needed
