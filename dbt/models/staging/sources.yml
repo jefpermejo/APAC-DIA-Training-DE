@@ -26,3 +26,6 @@ sources:
      - name: exchange_rates
        meta:
         external_location: "read_parquet('../lake/bronze/parquet/exchange_rates/exchange_rates.parquet')"
+     - name: shipments
+       meta:
+        external_location: "read_parquet('../lake/bronze/parquet/shipments/shipments.parquet')"

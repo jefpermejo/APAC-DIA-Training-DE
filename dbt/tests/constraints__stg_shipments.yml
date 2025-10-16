@@ -1,0 +1,23 @@
+version: 2
+models:
+ - name: stg_shipments
+   columns:
+     - name: shipment_id
+       data_type: bigint
+       tests:
+         - unique
+         - not_null
+     - name: order_id
+       data_type: bigint
+       tests:
+         - not_null
+     - name: carrier
+       data_type: varchar
+       tests:
+         - not_null
+     - name: shipped_date
+       data_type: timestamp
+     - name: delivered_date
+       data_type: timestamp
+     - name: ship_cost
+       data_type: double
