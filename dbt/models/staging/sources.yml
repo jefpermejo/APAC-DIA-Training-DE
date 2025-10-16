@@ -17,3 +17,6 @@ sources:
      - name: orders_header
        meta:
         external_location: "read_parquet('../lake/bronze/parquet/orders_header/orders_header.parquet')"
+     - name: orders_lines
+       meta:
+        external_location: "read_parquet('../lake/bronze/parquet/orders_lines/orders_lines.parquet')"
