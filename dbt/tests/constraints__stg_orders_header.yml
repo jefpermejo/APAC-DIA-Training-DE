@@ -1,0 +1,27 @@
+version: 2
+models:
+ - name: stg_orders_header
+   columns:
+     - name: order_id
+       data_type: bigint
+       tests:
+         - unique
+         - not_null
+     - name: order_ts_utc
+       data_type: timestamp
+     - name: order_dt_local
+       data_type: date
+     - name: customer_id
+       data_type: int
+     - name: store_id
+       data_type: int
+     - name: channel
+       data_type: varchar
+     - name: payment_method
+       data_type: varchar
+     - name: coupon_code
+       data_type: varchar
+     - name: shipping_fee
+       data_type: decimal(10, 2)
+     - name: currency
+       data_type: varchar
