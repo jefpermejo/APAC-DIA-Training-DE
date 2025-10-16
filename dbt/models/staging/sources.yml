@@ -23,3 +23,6 @@ sources:
      - name: sensors
        meta:
         external_location: "read_parquet('../lake/bronze/parquet/sensors/sensors.parquet')"
+     - name: exchange_rates
+       meta:
+        external_location: "read_parquet('../lake/bronze/parquet/exchange_rates/exchange_rates.parquet')"

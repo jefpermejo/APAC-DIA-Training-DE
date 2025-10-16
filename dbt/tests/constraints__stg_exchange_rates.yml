@@ -1,0 +1,16 @@
+version: 2
+models:
+ - name: stg_exchange_rates
+   columns:
+     - name: date
+       data_type: date
+       tests:
+         - not_null
+     - name: currency
+       data_type: varchar
+       tests:
+         - not_null
+     - name: rate_to_aud
+       data_type: double
+       tests:
+         - not_null
