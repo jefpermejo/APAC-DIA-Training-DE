@@ -25,3 +25,13 @@ models:
        data_type: date
      - name: discontinued_dt
        data_type: date
+     - name: price_segment
+       data_type: varchar
+     - name: days_on_market
+       data_type: bigint
+     - name: product_status
+       data_type: varchar
+     - name: product_group
+       data_type: varchar
+     - name: staging_ts
+       data_type: timestamp
