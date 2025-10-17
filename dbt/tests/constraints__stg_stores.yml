@@ -25,3 +25,9 @@ models:
        data_type: date
      - name: close_dt
        data_type: date
+     - name: days_open
+       data_type: bigint
+     - name: store_status
+       data_type: varchar
+     - name: staging_ts
+       data_type: timestamp

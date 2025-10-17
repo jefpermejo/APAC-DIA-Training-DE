@@ -16,5 +16,16 @@ cleaned_stores as (
     cast(open_dt as date) as open_dt,
     cast(close_dt as date) as close_dt
   from src
+),
+enriched_stores as (
+  select 
+  *,
+  date_diff('day', open_dt, current_date) as days_open,
+  case 
+    when close_dt is not null and close_dt <= current_date then 'Closed'
+    else 'Open'
+  end as store_status,
+  cast(current_timestamp as timestamp) as staging_ts
+  from cleaned_stores
 )
-select * from cleaned_stores
+select * from enriched_stores
