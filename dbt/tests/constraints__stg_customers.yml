@@ -41,3 +41,21 @@ models:
        data_type: boolean
      - name: gdpr_consent
        data_type: boolean
+     - name: full_name
+       data_type: varchar
+     - name: age
+       data_type: bigint
+     - name: days_since_join
+       data_type: bigint
+     - name: customer_segment
+       data_type: varchar
+     - name: gdpr_status
+       data_type: varchar
+     - name: country_name
+       data_type: varchar
+     - name: email_clean
+       data_type: varchar
+     - name: email_domain
+       data_type: varchar
+     - name: staging_ts
+       data_type: timestamp
