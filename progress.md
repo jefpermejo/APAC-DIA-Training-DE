@@ -163,7 +163,14 @@
         - shipments
     - Applied data cleaning, type casting, and trimming to ensure consistency and quality in all staging models.
     - Updated and validated constraints and tests for each staging model.
-    - Next Step: Continue with events and returns tables when data is available. For the staged tables, further enrich and progress them to the Silver layer.
+    - Next Step: Continue with events and returns tables when bronze data is available. For the staged tables, further enrich and progress them to the Silver layer.
+
+- **Oct 17, 2025:**
+    - Enriched and enhanced staging models for customers, products, stores, and suppliers tables in dbt, adding new columns.
+    - Validated enrichment logic and ensured consistency across all updated staging models.
+    - Next Step: Continue enrichment for remaining tables (orders_header, orders_lines, sensors, exchange_rates, shipments, events, returns) and begin Silver layer development for enriched tables.
+
+
 
 **Notes:**
 - Update this tracker regularly to keep track on progress/blockers.
