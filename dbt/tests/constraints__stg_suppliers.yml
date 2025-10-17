@@ -17,3 +17,7 @@ models:
        data_type: integer
      - name: preferred
        data_type: boolean
+     - name: lead_time_category
+       data_type: varchar
+     - name: staging_ts
+       data_type: timestamp

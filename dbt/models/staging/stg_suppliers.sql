@@ -12,5 +12,16 @@ cleaned_suppliers as (
     cast(lead_time_days as integer) as lead_time_days,
     cast(preferred as boolean) as preferred
   from src
+),
+enriched_suppliers as (
+  select 
+  *,
+  case 
+    when lead_time_days < 5 then 'Fast'
+    when lead_time_days between 5 and 10 then 'Average'
+    else 'Slow'
+  end as lead_time_category,
+  cast(current_timestamp as timestamp) as staging_ts
+  from cleaned_suppliers
 )
-select * from cleaned_suppliers
+select * from enriched_suppliers
