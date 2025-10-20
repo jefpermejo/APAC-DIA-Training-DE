@@ -170,7 +170,10 @@
     - Validated enrichment logic and ensured consistency across all updated staging models.
     - Next Step: Continue enrichment for remaining tables (orders_header, orders_lines, sensors, exchange_rates, shipments, events, returns) and begin Silver layer development for enriched tables.
 
-
+- **Oct 20, 2025:**
+    - Created Silver layer models for customers, products, stores, suppliers, orders header, and orders lines in dbt.
+    - Implemented deduplication for each table.
+    - Next Step: Validate Silver outputs, add tests, and begin enrichment for sensors, exchange_rates, shipments, events, and returns.
 
 **Notes:**
 - Update this tracker regularly to keep track on progress/blockers.
