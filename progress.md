@@ -175,6 +175,11 @@
     - Implemented deduplication for each table.
     - Next Step: Validate Silver outputs, add tests, and begin enrichment for sensors, exchange_rates, shipments, events, and returns.
 
+- **Oct 21, 2025:**
+    - Created Silver models for exchange_rates, sensors, and shipments in dbt.
+    - Built intermediate orders combined model joining header and lines.
+    - Next Step: Add more intermediate helpers(ongoing), validate outputs, and prepare for Gold layer development.
+
 **Notes:**
 - Update this tracker regularly to keep track on progress/blockers.
 - Add details or blockers as needed
