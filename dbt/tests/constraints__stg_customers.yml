@@ -59,3 +59,24 @@ models:
        data_type: varchar
      - name: staging_ts
        data_type: timestamp
+       tests:
+         - accepted_values:
+             values: ['active', 'inactive', 'pending']
+
+ - name: stg_orders
+   columns:
+     - name: order_id
+       data_type: bigint
+       tests:
+         - unique
+         - not_null
+     - name: customer_id
+       data_type: bigint
+       tests:
+         - relationships:
+             to: ref('stg_customers')
+             field: customer_id
+     - name: discount_percent
+       data_type: double
+       tests:
+         - discount_percent_range

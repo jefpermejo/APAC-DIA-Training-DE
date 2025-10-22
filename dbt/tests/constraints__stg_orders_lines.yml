@@ -23,3 +23,5 @@ models:
        data_type: decimal(10, 4)
      - name: tax_percent
        data_type: decimal(10, 4)
+     - name: staging_ts
+       data_type: timestamp

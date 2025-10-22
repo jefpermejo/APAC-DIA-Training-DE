@@ -20,5 +20,8 @@ models:
       +schema: stg
     silver:
       +schema: silver
+      intermediate:
+        +schema: silver
+        +materialized: view
     gold:
       +schema: gold

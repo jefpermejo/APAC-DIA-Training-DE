@@ -1,31 +1,43 @@
 version: 2
 sources:
- - name: main_stg
-   tables:
-     - name: customers
-       meta:
-        external_location: "read_parquet('../lake/bronze/parquet/customers/customers.parquet')"
-     - name: products
-       meta:
-        external_location: "read_parquet('../lake/bronze/parquet/products/products.parquet')"
-     - name: stores
-       meta:
-        external_location: "read_parquet('../lake/bronze/parquet/stores/stores.parquet')"
-     - name: suppliers
-       meta:
-        external_location: "read_parquet('../lake/bronze/parquet/suppliers/suppliers.parquet')"
-     - name: orders_header
-       meta:
-        external_location: "read_parquet('../lake/bronze/parquet/orders_header/orders_header.parquet')"
-     - name: orders_lines
-       meta:
-        external_location: "read_parquet('../lake/bronze/parquet/orders_lines/orders_lines.parquet')"
-     - name: sensors
-       meta:
-        external_location: "read_parquet('../lake/bronze/parquet/sensors/sensors.parquet')"
-     - name: exchange_rates
-       meta:
-        external_location: "read_parquet('../lake/bronze/parquet/exchange_rates/exchange_rates.parquet')"
-     - name: shipments
-       meta:
-        external_location: "read_parquet('../lake/bronze/parquet/shipments/shipments.parquet')"
+  - name: main_stg
+    freshness:
+      warn_after: {count: 12, period: hour}
+      error_after: {count: 24, period: hour}
+    tables:
+      - name: customers
+        loaded_at_field: ingestion_ts
+        meta:
+          external_location: "read_parquet('../lake/bronze/parquet/customers/customers.parquet')"
+      - name: products
+        loaded_at_field: ingestion_ts
+        meta:
+          external_location: "read_parquet('../lake/bronze/parquet/products/products.parquet')"
+      - name: stores
+        loaded_at_field: ingestion_ts
+        meta:
+          external_location: "read_parquet('../lake/bronze/parquet/stores/stores.parquet')"
+      - name: suppliers
+        loaded_at_field: ingestion_ts
+        meta:
+          external_location: "read_parquet('../lake/bronze/parquet/suppliers/suppliers.parquet')"
+      - name: orders_header
+        loaded_at_field: ingestion_ts
+        meta:
+          external_location: "read_parquet('../lake/bronze/parquet/orders_header/orders_header.parquet')"
+      - name: orders_lines
+        loaded_at_field: ingestion_ts
+        meta:
+          external_location: "read_parquet('../lake/bronze/parquet/orders_lines/orders_lines.parquet')"
+      - name: sensors
+        loaded_at_field: ingestion_ts
+        meta:
+          external_location: "read_parquet('../lake/bronze/parquet/sensors/sensors.parquet')"
+      - name: exchange_rates
+        loaded_at_field: date
+        meta:
+          external_location: "read_parquet('../lake/bronze/parquet/exchange_rates/exchange_rates.parquet')"
+      - name: shipments
+        loaded_at_field: shipped_at
+        meta:
+          external_location: "read_parquet('../lake/bronze/parquet/shipments/shipments.parquet')"

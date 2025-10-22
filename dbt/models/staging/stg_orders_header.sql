@@ -17,4 +17,4 @@ cleaned_orders_header as (
     upper(trim(currency)) as currency
   from src
 )
-select * from cleaned_orders_header
+select *, cast(current_timestamp as timestamp) as staging_ts from cleaned_orders_header

@@ -25,3 +25,5 @@ models:
        data_type: decimal(10, 2)
      - name: currency
        data_type: varchar
+     - name: staging_ts
+       data_type: timestamp

@@ -14,4 +14,4 @@ cleaned_orders_lines as (
     cast(tax_pct as decimal(10, 4)) as tax_percent
   from src
 )
-select * from cleaned_orders_lines
+select *, cast(current_timestamp as timestamp) as staging_ts from cleaned_orders_lines
