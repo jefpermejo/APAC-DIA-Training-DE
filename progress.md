@@ -180,6 +180,14 @@
     - Built intermediate orders combined model joining header and lines.
     - Next Step: Add more intermediate helpers(ongoing), validate outputs, and prepare for Gold layer development.
 
+- **Oct 22, 2025:**
+    - Patched Silver models to filter anomalies and enforce data quality
+    - Updated constraints files to include staging_ts for contract enforcement
+    - Fixed source freshness configuration to use correct timestamp columns
+    - Added more intermediate tables for easier joins in Gold
+    - Validated dbt pipeline and source freshness checks
+    - Next Step: Continue Gold layer improvements and documentation
+
 **Notes:**
 - Update this tracker regularly to keep track on progress/blockers.
 - Add details or blockers as needed
