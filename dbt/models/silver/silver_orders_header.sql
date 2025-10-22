@@ -2,12 +2,20 @@
 with src as (
   select * from {{ ref('stg_orders_header') }}
 ),
+validated as (
+  select *
+  from src
+  where order_id is not null
+    and customer_id > 0
+    and store_id > 0
+    and order_ts_utc is not null
+),
 deduped as (
   select *
   from (
     select *,
       row_number() over (partition by order_id order by order_ts_utc desc) as rn
-    from src
+    from validated
   ) t
   where rn = 1
 )
