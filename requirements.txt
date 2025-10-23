@@ -18,3 +18,4 @@ tqdm>=4.66.0
 dlt[duckdb]>=0.4.0
 dlt[filesystem]>=0.4.0
 dlt[parquet]>=0.4.0
+dlt[delta]>=0.4.0
