@@ -1,0 +1,38 @@
+version: 2
+
+snapshots:
+  - name: products_snapshot
+    description: "Tracks SCD2 history for products, including price changes."
+    columns:
+      - name: product_id
+        description: "Unique product identifier"
+        tests:
+          - not_null
+      - name: dbt_valid_from
+        description: "Start of validity period"
+        tests:
+          - not_null
+      - name: dbt_valid_to
+        description: "End of validity period"
+        tests: []
+      - name: name
+        description: "Product name"
+        tests:
+          - not_null
+      - name: current_price
+        description: "Current price of the product"
+        tests:
+          - not_null
+      - name: category
+        description: "Product category"
+        tests:
+          - not_null
+      - name: subcategory
+        description: "Product subcategory"
+        tests: []
+      - name: currency
+        description: "Currency of the price"
+        tests: []
+      - name: is_discontinued
+        description: "Flag for discontinued products"
+        tests: []
