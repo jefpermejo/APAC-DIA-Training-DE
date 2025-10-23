@@ -188,6 +188,13 @@
     - Validated dbt pipeline and source freshness checks
     - Next Step: Continue Gold layer improvements and documentation
 
+**Oct 23, 2025:**
+    - Committed major updates to Silver intermediate models for orders enrichment and compliance with Gold fact sales.
+    - Added and staged dbt generic and singular tests for Silver layer.
+    - Updated requirements and initialized schemas package.
+    - Committed revised Gold layer models (dim and fact tables) for star schema compliance.
+    - Next Step: Continue Gold layer improvements, business views, and Power BI dashboard.
+
 **Notes:**
 - Update this tracker regularly to keep track on progress/blockers.
 - Add details or blockers as needed
