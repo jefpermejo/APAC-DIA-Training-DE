@@ -15,36 +15,38 @@ dates as (
   select * from {{ ref('dim_date') }}
 )
 select
-  {{ dbt_utils.generate_surrogate_key(['o.order_id', 'o.line_number']) }} as sale_sk,
-  o.order_id,
-  o.line_number,
-  o.order_ts_utc,
-  o.customer_id,
-  o.store_id,
-  o.product_id,
-  o.unit_price,
-  o.quantity,
-  o.currency,
-  o.rate_to_aud,
-  o.line_total_orig_ccy,
-  o.line_total_base_ccy,
-  o.channel,
-  o.coupon_code,
-  o.payment_method,
-  o.line_total_base_ccy as net_amount,
-  o.line_discount_percent * o.unit_price * o.quantity as discount_amount,
-  o.tax_percent * o.unit_price * o.quantity as tax_amount,
+  {{ dbt_utils.generate_surrogate_key(['ord.order_id', 'ord.line_number']) }} as sale_sk,
+  ord.order_id,
+  ord.line_number,
+  ord.order_ts_utc,
+  ord.customer_id,
+  ord.store_id,
+  ord.product_id,
+  ord.unit_price,
+  ord.quantity,
+  ord.currency,
+  ord.rate_to_aud,
+  ord.line_total_orig_ccy,
+  ord.line_total_base_ccy,
+  ord.channel,
+  ord.coupon_code,
+  ord.payment_method,
+  ord.line_total_base_ccy as net_amount,
+  ord.line_discount_percent * ord.unit_price * ord.quantity as discount_amount,
+  ord.tax_percent * ord.unit_price * ord.quantity as tax_amount,
   -- Dimension attributes for reporting
   prod.product_name,
   prod.category,
   cust.customer_segment,
   sto.store_name,
   sto.region,
+  d.date_id,
   d.year,
-  d.month
+  d.month,
+  d.day
 from orders_enriched ord
 inner join products prod on ord.product_id = prod.product_id
 left join customers cust on ord.customer_id = cust.customer_id
 left join stores sto on ord.store_id = sto.store_id
-left join dates d on date(ord.order_ts_utc) = d.date
+left join dates d on ord.order_ts_utc::date = d.date
 where ord.product_id > 0
