@@ -195,6 +195,10 @@
     - Committed revised Gold layer models (dim and fact tables) for star schema compliance.
     - Next Step: Continue Gold layer improvements, business views, and Power BI dashboard.
 
+**Oct 23, 2025:**
+    - Initial draft of Power BI dashboard page 1
+    - Next step: Continue building the dashboard
+
 **Notes:**
 - Update this tracker regularly to keep track on progress/blockers.
 - Add details or blockers as needed
